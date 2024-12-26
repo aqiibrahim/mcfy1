@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "1042196171067",
+    "project_id": "mcfy-de1e5",
+    "storage_bucket": "mcfy-de1e5.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1042196171067:android:cfdf6cb787b9438da44f1e",
+        "android_client_info": {
+          "package_name": "com.example.mcfy1"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDXY8p5dJqeQefvK5VVl4ZhHQq-XVxTuHY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1042196171067:android:e9c532c492a06bc0a44f1e",
+        "android_client_info": {
+          "package_name": "com.example.mcfy1"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDXY8p5dJqeQefvK5VVl4ZhHQq-XVxTuHY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -4,7 +4,7 @@ import 'pages/fade_splash_screen.dart'; // Import the fade splash screen
 import 'pages/login_register_page.dart'; // Import the login/register page
 //import 'pages/profile_page.dart'; // Import the profile page
 import 'pages/lecturer_dashboard.dart'; 
-import 'pages/settings_page.dart';// Import the lecturer dashboard
+//import 'pages/settings_page.dart';// Import the lecturer dashboard
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -26,7 +26,7 @@ class MyApp extends StatelessWidget {
         '/loginRegister': (context) => const LoginRegisterPage(),
         //'/profile': (context) => const ProfilePage(),
         '/lecturerDashboard': (context) => const LecturerDashboard(),
-        '/settings': (context) => const SettingsPage(),
+        //'/settings': (context) => const SettingsPage(),
       },
     );
   }

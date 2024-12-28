@@ -77,13 +77,15 @@ class _LecturerDashboardState extends State<LecturerDashboard> {
               icon: const Icon(Icons.account_circle, color: Color(0xFFE5D1B8)),
             ),
             IconButton(
+              icon: const Icon(Icons.settings, color: Colors.white, size: 30),
               onPressed: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => const SettingsPage()),
+                  MaterialPageRoute(
+                    builder: (context) => const SettingsPage(role: 'Lecturer'), // Pass the role
+                  ),
                 );
               },
-              icon: const Icon(Icons.settings, color: Color(0xFFE5D1B8)),
             ),
           ],
         ),

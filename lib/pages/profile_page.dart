@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 
 class ProfilePage extends StatefulWidget {
   final String role;
@@ -12,42 +15,38 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  String username = 'User';
-  String email = '';
+  String? profileImageUrl;
+  final ImagePicker _picker = ImagePicker();
 
-  @override
-  void initState() {
-    super.initState();
-    _fetchUserProfile();
-  }
+  Future<void> _uploadProfilePicture() async {
+    final userId = FirebaseAuth.instance.currentUser?.uid;
+    final pickedFile = await _picker.pickImage(source: ImageSource.gallery);
 
-  Future<void> _fetchUserProfile() async {
-    try {
-      final user = FirebaseAuth.instance.currentUser;
-      if (user != null) {
-        final userDoc = await FirebaseFirestore.instance
+    if (pickedFile != null && userId != null) {
+      final file = File(pickedFile.path);
+      final ref = FirebaseStorage.instance
+          .ref()
+          .child('profileImages')
+          .child('$userId.jpg');
+
+      try {
+        final uploadTask = await ref.putFile(file);
+        final imageUrl = await uploadTask.ref.getDownloadURL();
+
+        // Save imageUrl to Firestore
+        await FirebaseFirestore.instance
             .collection('users')
-            .doc(user.uid)
-            .get();
+            .doc(userId)
+            .update({'profileImageUrl': imageUrl});
 
-        if (userDoc.exists) {
-          setState(() {
-            username = userDoc['username'] ?? 'User';
-            email = user.email ?? 'No email';
-          });
-        }
+        setState(() {
+          profileImageUrl = imageUrl; // Update the UI with the uploaded image
+        });
+      } catch (e) {
+        print('Upload error: $e');
       }
-    } catch (e) {
-      print('Error fetching user profile: $e');
-    }
-  }
-
-  Future<void> _logout() async {
-    try {
-      await FirebaseAuth.instance.signOut();
-      Navigator.pushNamedAndRemoveUntil(context, '/loginRegister', (route) => false);
-    } catch (e) {
-      print('Error logging out: $e');
+    } else {
+      print('No file selected or user not logged in.');
     }
   }
 
@@ -61,6 +60,8 @@ class _ProfilePageState extends State<ProfilePage> {
         widget.role == 'ClinicStaff' ? const Color(0xFF680C5D) : const Color(0xFF2B2129);
     final Color iconColor =
         widget.role == 'ClinicStaff' ? const Color(0xFFFED4E0) : const Color(0xFFE5D1B8);
+
+    final userId = FirebaseAuth.instance.currentUser?.uid;
 
     return Scaffold(
       appBar: AppBar(
@@ -84,74 +85,133 @@ class _ProfilePageState extends State<ProfilePage> {
         ),
         child: Padding(
           padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 20),
-              Center(
-                child: CircleAvatar(
-                  radius: 50,
-                  backgroundColor: iconColor,
-                  child: Icon(Icons.person, size: 60, color: backgroundColor),
-                ),
-              ),
-              const SizedBox(height: 20),
-              Center(
-                child: Text(
-                  username,
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 22,
-                    color: iconColor,
+          child: StreamBuilder<DocumentSnapshot>(
+            stream: FirebaseFirestore.instance
+                .collection('users')
+                .doc(userId)
+                .snapshots(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
+
+              if (!snapshot.hasData || !snapshot.data!.exists) {
+                return const Center(
+                  child: Text(
+                    'User data not found.',
+                    style: TextStyle(color: Colors.white),
                   ),
-                ),
-              ),
-              const SizedBox(height: 10),
-              Center(
-                child: Text(
-                  email,
-                  style: TextStyle(
-                    fontSize: 16,
-                    color: iconColor,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-              Divider(color: Colors.white.withOpacity(0.5)),
-              const SizedBox(height: 20),
-              _buildProfileItem(
-                title: 'Role',
-                value: widget.role,
-                icon: Icons.assignment_ind,
-                iconColor: iconColor,
-              ),
-              const SizedBox(height: 10),
-              _buildProfileItem(
-                title: 'Username',
-                value: username,
-                icon: Icons.person,
-                iconColor: iconColor,
-              ),
-              const Spacer(),
-              Center(
-                child: ElevatedButton.icon(
-                  onPressed: _logout,
-                  icon: Icon(Icons.logout, color: backgroundColor),
-                  label: Text(
-                    'Logout',
-                    style: TextStyle(color: backgroundColor),
-                  ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: iconColor,
-                    padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
+                );
+              }
+
+              final userData = snapshot.data!.data() as Map<String, dynamic>;
+              final username = userData['username'] ?? 'User';
+              final email = userData['email'] ?? 'No email';
+              final idNumber = userData['idNumber'] ?? 'N/A';
+              final profileImageUrl = userData['profileImageUrl'];
+
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 20),
+                  Center(
+                    child: Stack(
+                      children: [
+                        CircleAvatar(
+                          radius: 50,
+                          backgroundColor: iconColor,
+                          backgroundImage: profileImageUrl != null
+                              ? NetworkImage(profileImageUrl) as ImageProvider
+                              : null,
+                          child: profileImageUrl == null
+                              ? Icon(Icons.person, size: 60, color: backgroundColor)
+                              : null,
+                        ),
+                        Positioned(
+                          bottom: 0,
+                          right: 0,
+                          child: GestureDetector(
+                            onTap: _uploadProfilePicture,
+                            child: CircleAvatar(
+                              radius: 18,
+                              backgroundColor: Colors.white,
+                              child: Icon(Icons.camera_alt, size: 20, color: backgroundColor),
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                ),
-              ),
-              const SizedBox(height: 20),
-            ],
+                  const SizedBox(height: 20),
+                  Center(
+                    child: Text(
+                      username,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 22,
+                        color: iconColor,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Center(
+                    child: Text(
+                      email,
+                      style: TextStyle(
+                        fontSize: 16,
+                        color: iconColor,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Divider(color: Colors.white.withOpacity(0.5)),
+                  const SizedBox(height: 20),
+                  _buildProfileItem(
+                    title: 'Role',
+                    value: widget.role,
+                    icon: Icons.assignment_ind,
+                    iconColor: iconColor,
+                  ),
+                  const SizedBox(height: 10),
+                  _buildProfileItem(
+                    title: 'Username',
+                    value: username,
+                    icon: Icons.person,
+                    iconColor: iconColor,
+                  ),
+                  const SizedBox(height: 10),
+                  _buildProfileItem(
+                    title: 'ID Number',
+                    value: idNumber,
+                    icon: Icons.badge,
+                    iconColor: iconColor,
+                  ),
+                  const Spacer(),
+                  Center(
+                    child: ElevatedButton.icon(
+                      onPressed: () async {
+                        await FirebaseAuth.instance.signOut();
+                        Navigator.pushNamedAndRemoveUntil(
+                            context, '/loginRegister', (route) => false);
+                      },
+                      icon: Icon(Icons.logout, color: backgroundColor),
+                      label: Text(
+                        'Logout',
+                        style: TextStyle(color: backgroundColor),
+                      ),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: iconColor,
+                        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                ],
+              );
+            },
           ),
         ),
       ),

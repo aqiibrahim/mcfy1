@@ -427,6 +427,9 @@ Future<void> _login() async {
       final storedRole = userDoc['role'];
 
       if (storedRole == selectedRole) {
+        // Log login activity
+        await _logLoginActivity(userCredential.user!.uid);
+
         // Navigate to the respective dashboard
         if (storedRole == 'IIUM Clinic Staff' && mounted) {
           Navigator.push(
@@ -468,6 +471,31 @@ Future<void> _login() async {
         SnackBar(content: Text('Login Failed: $e')),
       );
     }
+  }
+}
+
+Future<void> _logLoginActivity(String userId) async {
+  try {
+    final existingActivityQuery = await _firestore
+        .collection('loginHistory')
+        .where('userId', isEqualTo: userId)
+        .get();
+
+    if (existingActivityQuery.docs.isNotEmpty) {
+      // Update the latest document for the userId
+      final docId = existingActivityQuery.docs.first.id;
+      await _firestore.collection('loginHistory').doc(docId).update({
+        'timestamp': FieldValue.serverTimestamp(),
+      });
+    } else {
+      // Add a new document if none exists
+      await _firestore.collection('loginHistory').add({
+        'userId': userId,
+        'timestamp': FieldValue.serverTimestamp(),
+      });
+    }
+  } catch (e) {
+    print('Error logging login activity: $e');
   }
 }
 

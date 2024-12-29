@@ -5,6 +5,7 @@ import 'package:mcfy1/pages/generate_mc_page.dart';
 import 'package:mcfy1/pages/profile_page.dart';
 import 'package:mcfy1/pages/settings_page.dart';
 import 'package:mcfy1/pages/mc_display_page.dart';
+import 'package:mcfy1/pages/search_page.dart';
 
 class ClinicStaffDashboard extends StatelessWidget {
   const ClinicStaffDashboard({Key? key}) : super(key: key);
@@ -50,33 +51,6 @@ class ClinicStaffDashboard extends StatelessWidget {
                             fontWeight: FontWeight.bold,
                             color: Colors.white,
                           ),
-                        ),
-                        Row(
-                          children: [
-                            IconButton(
-                              icon: const Icon(Icons.account_circle, color: Color(0xFFFFD700)),
-                              onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => const ProfilePage(role: 'ClinicStaff'),
-                                  ),
-                                );
-                              },
-                            ),
-                            const SizedBox(width: 10),
-                            IconButton(
-                              icon: const Icon(Icons.settings, color: Colors.white, size: 30),
-                              onPressed: () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => const SettingsPage(role: 'ClinicStaff'),
-                                  ),
-                                );
-                              },
-                            ),
-                          ],
                         ),
                       ],
                     ),
@@ -155,10 +129,11 @@ class ClinicStaffDashboard extends StatelessWidget {
                     Expanded(
                       child: StreamBuilder<QuerySnapshot>(
                         stream: FirebaseFirestore.instance
-                          .collection('medical_certificates')
-                          .where('generatedBy', isEqualTo: FirebaseAuth.instance.currentUser?.uid)
-                          .orderBy('timestamp', descending: true)
-                          .snapshots(),
+                            .collection('medical_certificates')
+                            .where('generatedBy',
+                                isEqualTo: FirebaseAuth.instance.currentUser?.uid)
+                            .orderBy('timestamp', descending: true)
+                            .snapshots(),
                         builder: (context, snapshot) {
                           if (!snapshot.hasData) {
                             return const Center(
@@ -244,14 +219,43 @@ class ClinicStaffDashboard extends StatelessWidget {
               IconButton(
                 icon: const Icon(Icons.search, color: Colors.blue),
                 onPressed: () {
-                  // Action for Find
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const SearchPage(), // Navigate to SearchPage
+                    ),
+                  );
+                },
+              ),
+              IconButton(
+                icon: const Icon(Icons.account_circle, color: Colors.green),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const ProfilePage(role: 'ClinicStaff'),
+                    ),
+                  );
                 },
               ),
               const SizedBox(width: 50), // Space for the middle button
               IconButton(
-                icon: const Icon(Icons.file_present, color: Colors.green),
+                icon: const Icon(Icons.settings, color: Colors.orange),
                 onPressed: () {
-                  // Action for Documents
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const SettingsPage(role: 'ClinicStaff'),
+                    ),
+                  );
+                },
+              ),
+              IconButton(
+                icon: const Icon(Icons.logout, color: Colors.red),
+                onPressed: () async {
+                  await FirebaseAuth.instance.signOut();
+                  Navigator.pushNamedAndRemoveUntil(
+                      context, '/loginRegister', (route) => false);
                 },
               ),
             ],

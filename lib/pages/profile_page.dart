@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:intl/intl.dart';
 import 'dart:io';
 
 class ProfilePage extends StatefulWidget {
@@ -16,7 +17,44 @@ class ProfilePage extends StatefulWidget {
 
 class _ProfilePageState extends State<ProfilePage> {
   String? profileImageUrl;
+  int totalMCsGenerated = 0;
   final ImagePicker _picker = ImagePicker();
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchProfilePicture();
+    _fetchTotalMCs();
+  }
+
+  Future<void> _fetchProfilePicture() async {
+    final userId = FirebaseAuth.instance.currentUser?.uid;
+
+    if (userId != null) {
+      final userDoc = await FirebaseFirestore.instance.collection('users').doc(userId).get();
+
+      if (userDoc.exists) {
+        setState(() {
+          profileImageUrl = userDoc.data()?['profileImageUrl'];
+        });
+      }
+    }
+  }
+
+  Future<void> _fetchTotalMCs() async {
+    final userId = FirebaseAuth.instance.currentUser?.uid;
+
+    if (userId != null) {
+      final querySnapshot = await FirebaseFirestore.instance
+          .collection('medical_certificates')
+          .where('generatedBy', isEqualTo: userId)
+          .get();
+
+      setState(() {
+        totalMCsGenerated = querySnapshot.size;
+      });
+    }
+  }
 
   Future<void> _uploadProfilePicture() async {
     final userId = FirebaseAuth.instance.currentUser?.uid;
@@ -24,20 +62,14 @@ class _ProfilePageState extends State<ProfilePage> {
 
     if (pickedFile != null && userId != null) {
       final file = File(pickedFile.path);
-      final ref = FirebaseStorage.instance
-          .ref()
-          .child('profileImages')
-          .child('$userId.jpg');
+      final ref = FirebaseStorage.instance.ref().child('profileImages').child('$userId.jpg');
 
       try {
         final uploadTask = await ref.putFile(file);
         final imageUrl = await uploadTask.ref.getDownloadURL();
 
         // Save imageUrl to Firestore
-        await FirebaseFirestore.instance
-            .collection('users')
-            .doc(userId)
-            .update({'profileImageUrl': imageUrl});
+        await FirebaseFirestore.instance.collection('users').doc(userId).update({'profileImageUrl': imageUrl});
 
         setState(() {
           profileImageUrl = imageUrl; // Update the UI with the uploaded image
@@ -50,30 +82,41 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
+  void _navigateToEditProfile() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => EditProfilePage(), // Define the EditProfilePage below
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    final Color backgroundColor =
-        widget.role == 'ClinicStaff' ? const Color(0xFF680C5D) : const Color(0xFF2B2129);
-    final Color gradientStart =
-        widget.role == 'ClinicStaff' ? const Color(0xFFF78FB3) : const Color(0xFFDD8E58);
-    final Color gradientEnd =
-        widget.role == 'ClinicStaff' ? const Color(0xFF680C5D) : const Color(0xFF2B2129);
-    final Color iconColor =
-        widget.role == 'ClinicStaff' ? const Color(0xFFFED4E0) : const Color(0xFFE5D1B8);
-
-    final userId = FirebaseAuth.instance.currentUser?.uid;
+    final Color backgroundColor = widget.role == 'ClinicStaff' ? const Color(0xFF680C5D) : const Color(0xFF2B2129);
+    final Color gradientStart = widget.role == 'ClinicStaff' ? const Color(0xFFF78FB3) : const Color(0xFFDD8E58);
+    final Color gradientEnd = widget.role == 'ClinicStaff' ? const Color(0xFF680C5D) : const Color(0xFF2B2129);
+    final Color iconColor = widget.role == 'ClinicStaff' ? const Color(0xFFFED4E0) : const Color(0xFFE5D1B8);
 
     return Scaffold(
       appBar: AppBar(
         backgroundColor: backgroundColor,
+        centerTitle: true,
         title: Text(
-          'Profile - ${widget.role}',
+          'Profile',
           style: TextStyle(
             fontWeight: FontWeight.bold,
             fontSize: 24,
             color: iconColor,
           ),
         ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.edit),
+            color: iconColor,
+            onPressed: _navigateToEditProfile,
+          ),
+        ],
       ),
       body: Container(
         decoration: BoxDecoration(
@@ -88,7 +131,7 @@ class _ProfilePageState extends State<ProfilePage> {
           child: StreamBuilder<DocumentSnapshot>(
             stream: FirebaseFirestore.instance
                 .collection('users')
-                .doc(userId)
+                .doc(FirebaseAuth.instance.currentUser?.uid)
                 .snapshots(),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
@@ -108,7 +151,6 @@ class _ProfilePageState extends State<ProfilePage> {
               final username = userData['username'] ?? 'User';
               final email = userData['email'] ?? 'No email';
               final idNumber = userData['idNumber'] ?? 'N/A';
-              final profileImageUrl = userData['profileImageUrl'];
 
               return Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -121,7 +163,7 @@ class _ProfilePageState extends State<ProfilePage> {
                           radius: 50,
                           backgroundColor: iconColor,
                           backgroundImage: profileImageUrl != null
-                              ? NetworkImage(profileImageUrl) as ImageProvider
+                              ? NetworkImage(profileImageUrl!) as ImageProvider
                               : null,
                           child: profileImageUrl == null
                               ? Icon(Icons.person, size: 60, color: backgroundColor)
@@ -174,41 +216,99 @@ class _ProfilePageState extends State<ProfilePage> {
                   ),
                   const SizedBox(height: 10),
                   _buildProfileItem(
-                    title: 'Username',
-                    value: username,
-                    icon: Icons.person,
-                    iconColor: iconColor,
-                  ),
-                  const SizedBox(height: 10),
-                  _buildProfileItem(
                     title: 'ID Number',
                     value: idNumber,
                     icon: Icons.badge,
                     iconColor: iconColor,
                   ),
-                  const Spacer(),
+                  const SizedBox(height: 20),
+                  Divider(color: Colors.white.withOpacity(0.5)),
+                  const SizedBox(height: 20),
                   Center(
-                    child: ElevatedButton.icon(
-                      onPressed: () async {
-                        await FirebaseAuth.instance.signOut();
-                        Navigator.pushNamedAndRemoveUntil(
-                            context, '/loginRegister', (route) => false);
-                      },
-                      icon: Icon(Icons.logout, color: backgroundColor),
-                      label: Text(
-                        'Logout',
-                        style: TextStyle(color: backgroundColor),
-                      ),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: iconColor,
-                        padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
+                    child: Text(
+                      'Profile Statistics',
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
+                        color: iconColor,
                       ),
                     ),
                   ),
+                  const SizedBox(height: 10),
+                  _buildProfileItem(
+                    title: 'Total MCs Generated',
+                    value: totalMCsGenerated.toString(),
+                    icon: Icons.bar_chart,
+                    iconColor: iconColor,
+                  ),
                   const SizedBox(height: 20),
+                  Divider(color: Colors.white.withOpacity(0.5)),
+                  const SizedBox(height: 20),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Center(
+                          child: Text(
+                            'Activity Timeline',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 18,
+                              color: iconColor,
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          child: StreamBuilder<QuerySnapshot>(
+                            stream: FirebaseFirestore.instance
+                                .collection('loginHistory')
+                                .where('userId', isEqualTo: FirebaseAuth.instance.currentUser?.uid)
+                                .orderBy('timestamp', descending: true)
+                                .snapshots(),
+                            builder: (context, snapshot) {
+                              if (snapshot.connectionState == ConnectionState.waiting) {
+                                return const Center(child: CircularProgressIndicator());
+                              }
+
+                              if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                                return const Center(
+                                  child: Text(
+                                    'No login history found.',
+                                    style: TextStyle(color: Colors.white70),
+                                  ),
+                                );
+                              }
+
+                              final loginHistoryDocs = snapshot.data!.docs;
+
+                              return ListView.builder(
+                                shrinkWrap: true,
+                                itemCount: loginHistoryDocs.length,
+                                itemBuilder: (context, index) {
+                                  final loginData = loginHistoryDocs[index].data() as Map<String, dynamic>;
+                                  final timestamp = loginData['timestamp'] as Timestamp?;
+                                  final formattedDate = timestamp != null
+                                      ? DateFormat('dd MMM yyyy, hh:mm a').format(timestamp.toDate())
+                                      : 'Unknown';
+
+                                  return ListTile(
+                                    title: Text(
+                                      'Login Activity',
+                                      style: TextStyle(color: Colors.white),
+                                    ),
+                                    subtitle: Text(
+                                      formattedDate,
+                                      style: TextStyle(color: Colors.white70),
+                                    ),
+                                  );
+                                },
+                              );
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ],
               );
             },
@@ -249,3 +349,109 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 }
+
+class EditProfilePage extends StatefulWidget {
+  @override
+  _EditProfilePageState createState() => _EditProfilePageState();
+}
+
+class _EditProfilePageState extends State<EditProfilePage> {
+  final _formKey = GlobalKey<FormState>();
+  final TextEditingController _usernameController = TextEditingController();
+  final TextEditingController _idNumberController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCurrentUserData();
+  }
+
+  Future<void> _loadCurrentUserData() async {
+    final userId = FirebaseAuth.instance.currentUser?.uid;
+    if (userId != null) {
+      final userDoc = await FirebaseFirestore.instance.collection('users').doc(userId).get();
+      if (userDoc.exists) {
+        final data = userDoc.data();
+        setState(() {
+          _usernameController.text = data?['username'] ?? '';
+          _idNumberController.text = data?['idNumber'] ?? '';
+        });
+      }
+    }
+  }
+
+  Future<void> _updateUserProfile() async {
+    if (_formKey.currentState?.validate() ?? false) {
+      final userId = FirebaseAuth.instance.currentUser?.uid;
+      if (userId != null) {
+        try {
+          await FirebaseFirestore.instance.collection('users').doc(userId).update({
+            'username': _usernameController.text.trim(),
+            'idNumber': _idNumberController.text.trim(),
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Profile updated successfully')),
+          );
+          Navigator.pop(context); // Return to ProfilePage
+        } catch (e) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error updating profile: $e')),
+          );
+        }
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Edit Profile'),
+      ),
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Form(
+          key: _formKey,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              TextFormField(
+                controller: _usernameController,
+                decoration: const InputDecoration(
+                  labelText: 'Username',
+                  border: OutlineInputBorder(),
+                ),
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Username cannot be empty';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 20),
+              TextFormField(
+                controller: _idNumberController,
+                decoration: const InputDecoration(
+                  labelText: 'ID Number',
+                  border: OutlineInputBorder(),
+                ),
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'ID Number cannot be empty';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: _updateUserProfile,
+                child: const Text('Save Changes'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+

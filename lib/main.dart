@@ -1,15 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'pages/fade_splash_screen.dart'; // Import the fade splash screen
+import 'package:firebase_auth/firebase_auth.dart';
+//import 'pages/fade_splash_screen.dart'; // Import the fade splash screen
 import 'pages/login_register_page.dart'; // Import the login/register page
-//import 'pages/profile_page.dart'; // Import the profile page
-import 'pages/lecturer_dashboard.dart'; 
-//import 'pages/settings_page.dart';// Import the lecturer dashboard
+import 'pages/lecturer_dashboard.dart'; // Import the lecturer dashboard
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(); // Initialize Firebase
-  runApp(MyApp());
+  runApp(const MyApp());
 }
 
 class MyApp extends StatelessWidget {
@@ -20,13 +19,36 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'McFy',
-      theme: ThemeData.dark(), // We use dark theme as base
-      home: const FadeSplashScreen(), // Set the splash screen as the initial page
+      theme: ThemeData.dark(), // We use a dark theme as base
+      home: const AuthChecker(), // Initial page based on auth state
       routes: {
         '/loginRegister': (context) => const LoginRegisterPage(),
-        //'/profile': (context) => const ProfilePage(),
         '/lecturerDashboard': (context) => const LecturerDashboard(),
-        //'/settings': (context) => const SettingsPage(),
+      },
+    );
+  }
+}
+
+/// AuthChecker determines the first page to display based on user's auth state.
+class AuthChecker extends StatelessWidget {
+  const AuthChecker({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<User?>(
+      stream: FirebaseAuth.instance.authStateChanges(), // Listen to auth state changes
+      builder: (context, snapshot) {
+        // Check if the user is authenticated
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          // Show a loading indicator while waiting for Firebase
+          return const Center(child: CircularProgressIndicator());
+        } else if (snapshot.hasData) {
+          // If a user is logged in, navigate to the lecturer dashboard
+          return const LecturerDashboard();
+        } else {
+          // If no user is logged in, navigate to the login/register page
+          return const LoginRegisterPage();
+        }
       },
     );
   }

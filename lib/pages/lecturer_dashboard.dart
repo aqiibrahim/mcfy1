@@ -6,6 +6,7 @@ import 'find_scanned_qr.dart';
 import 'scanqr_page.dart';
 import 'profile_page.dart';
 import 'settings_page.dart';
+import 'report_page.dart'; // Import the ReportPage
 
 class LecturerDashboard extends StatefulWidget {
   const LecturerDashboard({Key? key}) : super(key: key);
@@ -252,7 +253,13 @@ class _LecturerDashboardState extends State<LecturerDashboard> {
               const SizedBox(height: 20),
               Center(
                 child: ElevatedButton.icon(
-                  onPressed: () {},
+                  onPressed: () {
+                    // Navigate to ReportPage
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const ReportPage()),
+                    );
+                  },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF2B2129),
                     shape: RoundedRectangleBorder(
@@ -287,38 +294,37 @@ class _LecturerDashboardState extends State<LecturerDashboard> {
     required Color color,
   }) {
     return Expanded(
-  child: Container(
-    margin: const EdgeInsets.symmetric(horizontal: 10),
-    decoration: BoxDecoration(
-      color: color,
-      borderRadius: BorderRadius.circular(10),
-    ),
-    child: TextButton.icon(
-      onPressed: () {
-        if (icon == Icons.qr_code_scanner) {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const ScanQRPage()),
-          );
-        } else if (icon == Icons.search) {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const FindScannedQRPage()),
-          );
-        }
-      },
-      icon: Icon(icon, color: const Color(0xFF2B2129), size: 28),
-      label: Text(
-        label,
-        style: const TextStyle(
-          fontSize: 16,
-          color: Color(0xFFE5D1B8),
-          fontWeight: FontWeight.bold,
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 10),
+        decoration: BoxDecoration(
+          color: color,
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: TextButton.icon(
+          onPressed: () {
+            if (icon == Icons.qr_code_scanner) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const ScanQRPage()),
+              );
+            } else if (icon == Icons.search) {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const FindScannedQRPage()),
+              );
+            }
+          },
+          icon: Icon(icon, color: const Color(0xFF2B2129), size: 28),
+          label: Text(
+            label,
+            style: const TextStyle(
+              fontSize: 16,
+              color: Color(0xFFE5D1B8),
+              fontWeight: FontWeight.bold,
+            ),
+          ),
         ),
       ),
-    ),
-  ),
-);
-
+    );
   }
 }

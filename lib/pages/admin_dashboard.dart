@@ -5,6 +5,8 @@ import 'profile_page.dart';
 import 'settings_page.dart';
 import 'find_user_page.dart';
 import 'find_scanned_qr.dart';
+import 'report_list_view.dart';
+import 'login_register_page.dart'; // Add login page for redirection
 
 class AdminDashboard extends StatefulWidget {
   const AdminDashboard({Key? key}) : super(key: key);
@@ -15,40 +17,76 @@ class AdminDashboard extends StatefulWidget {
 
 class _AdminDashboardState extends State<AdminDashboard> {
   String username = 'Admin';
+  bool isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _fetchUsername();
+    _checkAuthentication();
   }
 
-  Future<void> _fetchUsername() async {
+  /// Check if the user is authenticated, fetch username, or redirect to login.
+  Future<void> _checkAuthentication() async {
     try {
-      final userId = FirebaseAuth.instance.currentUser?.uid;
-      if (userId != null) {
-        final userDoc = await FirebaseFirestore.instance
-            .collection('users')
-            .doc(userId)
-            .get();
-        if (userDoc.exists) {
-          setState(() {
-            username = userDoc['username'] ?? 'Admin';
-          });
-        }
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        // Redirect to login page if user is not authenticated
+        _redirectToLogin();
+        return;
       }
+      await _fetchUsername(user.uid);
     } catch (e) {
+      debugPrint('Error: $e');
+      _redirectToLogin();
+    } finally {
       setState(() {
-        username = 'Admin';
+        isLoading = false;
       });
     }
   }
 
+  /// Fetch the username from Firestore
+  Future<void> _fetchUsername(String userId) async {
+    try {
+      final userDoc = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userId)
+          .get();
+
+      if (userDoc.exists) {
+        setState(() {
+          username = userDoc.data()?['username'] ?? 'Admin';
+        });
+      } else {
+        debugPrint('User document does not exist.');
+        username = 'Admin';
+      }
+    } catch (e) {
+      debugPrint('Failed to fetch username: $e');
+      username = 'Admin';
+    }
+  }
+
+  /// Redirect unauthenticated users to the login page
+  void _redirectToLogin() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const LoginRegisterPage()),
+      );
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
+    if (isLoading) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
     return WillPopScope(
-      onWillPop: () async {
-        return false; // Prevent back navigation
-      },
+      onWillPop: () async => false, // Prevent back navigation
       child: Scaffold(
         appBar: AppBar(
           elevation: 0,
@@ -104,10 +142,11 @@ class _AdminDashboardState extends State<AdminDashboard> {
             children: [
               // Greeting Section
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                child: Text(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                child: const Text(
                   'Welcome Back,',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 18,
                     color: Color(0xFFE5D1B8),
                   ),
@@ -139,7 +178,8 @@ class _AdminDashboardState extends State<AdminDashboard> {
                       onTap: () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (context) => const FindUserPage()),
+                          MaterialPageRoute(
+                              builder: (context) => const FindUserPage()),
                         );
                       },
                     ),
@@ -151,7 +191,9 @@ class _AdminDashboardState extends State<AdminDashboard> {
                       onTap: () {
                         Navigator.push(
                           context,
-                          MaterialPageRoute(builder: (context) => const FindScannedQRPage()),
+                          MaterialPageRoute(
+                              builder: (context) =>
+                                  const FindScannedQRPage()),
                         );
                       },
                     ),
@@ -163,7 +205,12 @@ class _AdminDashboardState extends State<AdminDashboard> {
               Center(
                 child: ElevatedButton.icon(
                   onPressed: () {
-                    // Add functionality for viewing reports
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const ReportListView(),
+                      ),
+                    );
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF2B2129),

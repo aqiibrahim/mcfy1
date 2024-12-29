@@ -3,6 +3,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:mcfy1/pages/clinic_staff_dashboard.dart';
 import 'package:mcfy1/pages/lecturer_dashboard.dart';
+import 'package:mcfy1/pages/admin_dashboard.dart';
+
 
 
 class LoginRegisterPage extends StatefulWidget {
@@ -411,13 +413,11 @@ Widget _buildLoginForm() {
 
 Future<void> _login() async {
   try {
-    // Sign in the user
     final userCredential = await _auth.signInWithEmailAndPassword(
       email: emailController.text.trim(),
       password: passwordController.text.trim(),
     );
 
-    // Retrieve the user's role from Firestore
     final userDoc = await _firestore
         .collection('users')
         .doc(userCredential.user!.uid)
@@ -427,10 +427,8 @@ Future<void> _login() async {
       final storedRole = userDoc['role'];
 
       if (storedRole == selectedRole) {
-        // Log login activity
         await _logLoginActivity(userCredential.user!.uid);
 
-        // Navigate to the respective dashboard
         if (storedRole == 'IIUM Clinic Staff' && mounted) {
           Navigator.push(
             context,
@@ -442,18 +440,23 @@ Future<void> _login() async {
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => const LecturerDashboard(), // Lecturer dashboard navigation
+              builder: (context) => const LecturerDashboard(),
+            ),
+          );
+        } else if (storedRole == 'Admin' && mounted) {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const AdminDashboard(),
             ),
           );
         } else if (mounted) {
-          // Handle navigation for other roles
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Dashboard for this role is not ready yet.')),
           );
         }
       } else {
-        // Mismatch in roles
-        await _auth.signOut(); // Log out the user
+        await _auth.signOut();
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Incorrect role selected.')),
@@ -500,55 +503,58 @@ Future<void> _logLoginActivity(String userId) async {
 }
 
 
+Future<void> _register() async {
+  if (!_formKey.currentState!.validate()) return;
 
+  try {
+    final userCredential = await _auth.createUserWithEmailAndPassword(
+      email: emailController.text.trim(),
+      password: passwordController.text.trim(),
+    );
 
-  Future<void> _register() async {
-    if (!_formKey.currentState!.validate()) return;
+    await _firestore.collection('users').doc(userCredential.user!.uid).set({
+      'idNumber': idNumberController.text.trim(),
+      'username': usernameController.text.trim(),
+      'email': emailController.text.trim(),
+      'role': selectedRole,
+      'createdAt': FieldValue.serverTimestamp(),
+    });
 
-    try {
-      final userCredential = await _auth.createUserWithEmailAndPassword(
-        email: emailController.text.trim(),
-        password: passwordController.text.trim(),
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Registration Successful')),
+    );
+
+    if (selectedRole == 'IIUM Clinic Staff' && mounted) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const ClinicStaffDashboard(),
+        ),
       );
-
-      // Save user details to Firestore
-      await _firestore.collection('users').doc(userCredential.user!.uid).set({
-        'idNumber': idNumberController.text.trim(),
-        'username': usernameController.text.trim(),
-        'email': emailController.text.trim(),
-        'role': selectedRole,
-        'createdAt': FieldValue.serverTimestamp(),
-      });
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Registration Successful')),
+    } else if (selectedRole == 'Lecturer' && mounted) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const LecturerDashboard(),
+        ),
       );
-
-      // Navigate to respective dashboard after registration
-      if (selectedRole == 'IIUM Clinic Staff' && mounted) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) => const ClinicStaffDashboard(),
-          ),
-        );
-      } else if (selectedRole == 'Lecturer' && mounted) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) => const LecturerDashboard(),
-          ),
-        );
-      } else if (mounted) {
-        // Handle other roles or default action
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Dashboard for this role is not ready yet.')),
-        );
-      }
-    } catch (e) {
+    } else if (selectedRole == 'Admin' && mounted) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => const AdminDashboard(),
+        ),
+      );
+    } else if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Registration Failed: $e')),
+        const SnackBar(content: Text('Dashboard for this role is not ready yet.')),
       );
     }
+  } catch (e) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Registration Failed: $e')),
+    );
   }
+}
+
 }

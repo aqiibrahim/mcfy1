@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:mcfy1/pages/search_mc.dart';
 import 'profile_page.dart';
 import 'settings_page.dart';
 import 'find_user_page.dart';
-import 'find_scanned_qr.dart';
 import 'report_list_view.dart';
 import 'login_register_page.dart'; // Add login page for redirection
 
@@ -192,8 +192,7 @@ class _AdminDashboardState extends State<AdminDashboard> {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                              builder: (context) =>
-                                  const FindScannedQRPage()),
+                              builder: (context) => const SearchMCPage()),
                         );
                       },
                     ),

@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-//import 'pages/fade_splash_screen.dart'; // Import the fade splash screen
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'pages/login_register_page.dart'; // Import the login/register page
 import 'pages/lecturer_dashboard.dart'; // Import the lecturer dashboard
+import 'pages/admin_dashboard.dart'; // Import the admin dashboard
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -24,6 +25,7 @@ class MyApp extends StatelessWidget {
       routes: {
         '/loginRegister': (context) => const LoginRegisterPage(),
         '/lecturerDashboard': (context) => const LecturerDashboard(),
+        '/adminDashboard': (context) => const AdminDashboard(),
       },
     );
   }
@@ -38,13 +40,41 @@ class AuthChecker extends StatelessWidget {
     return StreamBuilder<User?>(
       stream: FirebaseAuth.instance.authStateChanges(), // Listen to auth state changes
       builder: (context, snapshot) {
-        // Check if the user is authenticated
         if (snapshot.connectionState == ConnectionState.waiting) {
           // Show a loading indicator while waiting for Firebase
           return const Center(child: CircularProgressIndicator());
-        } else if (snapshot.hasData) {
-          // If a user is logged in, navigate to the lecturer dashboard
-          return const LecturerDashboard();
+        }
+
+        if (snapshot.hasData) {
+          // If a user is logged in, fetch their role and navigate accordingly
+          return FutureBuilder<DocumentSnapshot>(
+            future: FirebaseFirestore.instance
+                .collection('users')
+                .doc(snapshot.data!.uid)
+                .get(),
+            builder: (context, roleSnapshot) {
+              if (roleSnapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
+
+              if (roleSnapshot.hasData && roleSnapshot.data != null) {
+                final role = roleSnapshot.data!['role'];
+
+                // Navigate to the appropriate dashboard based on the user's role
+                if (role == 'admin') {
+                  return const AdminDashboard();
+                } else if (role == 'lecturer') {
+                  return const LecturerDashboard();
+                } else {
+                  return const LoginRegisterPage(); // Fallback to login if role is invalid
+                }
+              } else {
+                // If there's an error fetching role or no role is found, log out the user
+                FirebaseAuth.instance.signOut();
+                return const LoginRegisterPage();
+              }
+            },
+          );
         } else {
           // If no user is logged in, navigate to the login/register page
           return const LoginRegisterPage();

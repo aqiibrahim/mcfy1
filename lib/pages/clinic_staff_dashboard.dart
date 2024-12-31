@@ -6,6 +6,7 @@ import 'package:mcfy1/pages/profile_page.dart';
 import 'package:mcfy1/pages/settings_page.dart';
 import 'package:mcfy1/pages/mc_display_page.dart';
 import 'package:mcfy1/pages/search_page.dart';
+import 'package:mcfy1/pages/all_qr_codes_page.dart';
 
 class ClinicStaffDashboard extends StatelessWidget {
   const ClinicStaffDashboard({Key? key}) : super(key: key);
@@ -13,168 +14,221 @@ class ClinicStaffDashboard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return WillPopScope(
-      onWillPop: () async {
-        return false; // Prevent navigation back
-      },
+      onWillPop: () async => false, // Prevent navigation back
       child: Scaffold(
-        body: Stack(
-          children: [
-            // Gradient Background
-            Container(
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    Color(0xFF1A1A1D), // Dark gray
-                    Color(0xFF3B1C32), // Deep purple
-                    Color(0xFF6A1E55), // Vibrant purple
-                  ],
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
+        backgroundColor: const Color(0xFFF9F9F9), // Light background
+        body: SafeArea(
+          child: Column(
+            children: [
+              // Gradient Header with Greeting
+              Container(
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      Color(0xFF6A1E55),
+                      Color(0xFF3B1C32),
+                    ],
+                    begin: Alignment.topCenter,
+                    end: Alignment.bottomCenter,
+                  ),
                 ),
-              ),
-            ),
-
-            SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                padding: const EdgeInsets.symmetric(vertical: 30, horizontal: 20),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    // Top Bar
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        const Text(
-                          'McFy',
-                          style: TextStyle(
-                            fontSize: 28,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
+                        Container(
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            gradient: const LinearGradient(
+                              colors: [
+                                Color(0xFF6A1E55),
+                                Color(0xFF3B1C32),
+                              ],
+                            ),
+                          ),
+                          padding: const EdgeInsets.all(4),
+                          child: const CircleAvatar(
+                            radius: 30,
+                            backgroundColor: Colors.white,
+                            child: Icon(
+                              Icons.person,
+                              color: Color(0xFF6A1E55),
+                              size: 30,
+                            ),
                           ),
                         ),
-                      ],
-                    ),
-                    const SizedBox(height: 20),
-
-                    // Welcome Section with Dynamic Username
-                    StreamBuilder<DocumentSnapshot>(
-                      stream: FirebaseFirestore.instance
-                          .collection('users')
-                          .doc(FirebaseAuth.instance.currentUser!.uid)
-                          .snapshots(),
-                      builder: (context, snapshot) {
-                        if (snapshot.hasData && snapshot.data != null) {
-                          final userData =
-                              snapshot.data!.data() as Map<String, dynamic>;
-                          final username = userData['username'] ?? 'User';
-
-                          return Row(
-                            children: [
-                              CircleAvatar(
-                                radius: 40,
-                                backgroundColor: Colors.purple,
-                                child: const Icon(Icons.person, color: Colors.white, size: 40),
+                        const SizedBox(width: 12),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              "Welcome back,",
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w400,
+                                fontFamily: "Montserrat",
+                                color: Colors.white70,
                               ),
-                              const SizedBox(width: 15),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Text(
-                                    'Hello',
-                                    style: TextStyle(
-                                      fontSize: 18,
-                                      color: Colors.white70,
-                                    ),
-                                  ),
-                                  Text(
+                            ),
+                            StreamBuilder<DocumentSnapshot>(
+                              stream: FirebaseFirestore.instance
+                                  .collection('users')
+                                  .doc(FirebaseAuth.instance.currentUser!.uid)
+                                  .snapshots(),
+                              builder: (context, snapshot) {
+                                if (snapshot.hasData && snapshot.data != null) {
+                                  final userData =
+                                      snapshot.data!.data() as Map<String, dynamic>;
+                                  final username = userData['username'] ?? 'User';
+                                  return Text(
                                     username,
                                     style: const TextStyle(
                                       fontSize: 22,
                                       fontWeight: FontWeight.bold,
                                       color: Colors.white,
                                     ),
-                                  ),
-                                ],
-                              ),
-                            ],
-                          );
-                        } else if (snapshot.connectionState ==
-                            ConnectionState.waiting) {
-                          return const Center(
-                            child: CircularProgressIndicator(),
-                          );
-                        } else {
-                          return const Text(
-                            'Hello, User',
-                            style: TextStyle(
-                              fontSize: 22,
-                              color: Colors.white,
-                            ),
-                          );
-                        }
-                      },
-                    ),
-                    const SizedBox(height: 20),
-
-                    // Recent Activity Section
-                    const Text(
-                      'Recent Activity',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    Expanded(
-                      child: StreamBuilder<QuerySnapshot>(
-                        stream: FirebaseFirestore.instance
-                            .collection('medical_certificates')
-                            .where('generatedBy',
-                                isEqualTo: FirebaseAuth.instance.currentUser?.uid)
-                            .orderBy('timestamp', descending: true)
-                            .snapshots(),
-                        builder: (context, snapshot) {
-                          if (!snapshot.hasData) {
-                            return const Center(
-                              child: CircularProgressIndicator(),
-                            );
-                          }
-
-                          final docs = snapshot.data!.docs;
-                          if (docs.isEmpty) {
-                            return const Center(
-                              child: Text(
-                                'No recent activity.',
-                                style: TextStyle(color: Colors.white70),
-                              ),
-                            );
-                          }
-
-                          return ListView.builder(
-                            itemCount: docs.length,
-                            itemBuilder: (context, index) {
-                              final activity = docs[index].data() as Map<String, dynamic>;
-                              final name = activity['name'] ?? 'Unknown';
-                              final matricNumber = activity['matricNumber'] ?? 'Unknown';
-                              final stayOffDays = activity['stayOffDays'] ?? 'Unknown';
-                              final documentId = docs[index].id; // Fetch the document ID for navigation
-
-                              return GestureDetector(
-                                onTap: () {
-                                  // Navigate to MCDisplayPage with the selected document ID
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => MCDisplayPage(
-                                        documentId: documentId, // Pass the Firestore document ID
-                                      ),
+                                  );
+                                } else {
+                                  return const Text(
+                                    'User',
+                                    style: TextStyle(
+                                      fontSize: 22,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white,
                                     ),
                                   );
-                                },
-                                child: Card(
-                                  color: Colors.white.withOpacity(0.1),
+                                }
+                              },
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.logout, color: Colors.white),
+                      onPressed: () async {
+                        await FirebaseAuth.instance.signOut();
+                        Navigator.pushNamedAndRemoveUntil(
+                            context, '/loginRegister', (route) => false);
+                      },
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // Search Bar
+              GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const SearchPage()),
+                  );
+                },
+                child: Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 20),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: const [
+                      Text(
+                        "Search patients by name or matric number...",
+                        style: TextStyle(
+                          color: Color(0xFF9DA3B4),
+                        ),
+                      ),
+                      Icon(Icons.search, color: Color(0xFF6A1E55)),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // Recent Activity Section
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Recent Activity',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF22215B),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Expanded(
+                        child: StreamBuilder<QuerySnapshot>(
+                          stream: FirebaseFirestore.instance
+                              .collection('medical_certificates')
+                              .where('generatedBy',
+                                  isEqualTo: FirebaseAuth.instance.currentUser?.uid)
+                              .orderBy('timestamp', descending: true)
+                              .snapshots(),
+                          builder: (context, snapshot) {
+                            if (!snapshot.hasData) {
+                              return const Center(
+                                child: CircularProgressIndicator(),
+                              );
+                            }
+
+                            final docs = snapshot.data!.docs;
+                            if (docs.isEmpty) {
+                              return const Center(
+                                child: Text(
+                                  'No recent activity.',
+                                  style: TextStyle(color: Color(0xFF9DA3B4)),
+                                ),
+                              );
+                            }
+
+                            return ListView.builder(
+                              itemCount: docs.length,
+                              itemBuilder: (context, index) {
+                                final activity = docs[index].data() as Map<String, dynamic>;
+                                final name = activity['name'] ?? 'Unknown';
+                                final matricNumber = activity['matricNumber'] ?? 'Unknown';
+                                final stayOffDays = activity['stayOffDays'] ?? 'Unknown';
+                                final documentId = docs[index].id;
+
+                                return Container(
+                                  margin: const EdgeInsets.symmetric(vertical: 8.0),
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(16),
+                                    gradient: const LinearGradient(
+                                      colors: [
+                                        Color(0xFF6A1E55),
+                                        Color(0xFF3B1C32),
+                                      ],
+                                      begin: Alignment.topLeft,
+                                      end: Alignment.bottomRight,
+                                    ),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withOpacity(0.1),
+                                        blurRadius: 8,
+                                        offset: const Offset(0, 4),
+                                      ),
+                                    ],
+                                  ),
                                   child: ListTile(
+                                    contentPadding: const EdgeInsets.all(16),
                                     title: Text(
                                       'Patient: $name',
                                       style: const TextStyle(
@@ -195,40 +249,60 @@ class ClinicStaffDashboard extends StatelessWidget {
                                         ),
                                       ],
                                     ),
+                                    onTap: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => MCDisplayPage(
+                                            documentId: documentId,
+                                          ),
+                                        ),
+                                      );
+                                    },
                                   ),
-                                ),
-                              );
-                            },
-                          );
-                        },
+                                );
+                              },
+                            );
+                          },
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
-        bottomNavigationBar: BottomAppBar(
-          color: const Color(0xFF3B1C32),
-          shape: const CircularNotchedRectangle(),
-          notchMargin: 8.0,
+        bottomNavigationBar: Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: const BorderRadius.only(
+              topLeft: Radius.circular(20),
+              topRight: Radius.circular(20),
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 10,
+                offset: const Offset(0, -4),
+              ),
+            ],
+          ),
+          padding: const EdgeInsets.symmetric(vertical: 16),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceAround,
             children: [
               IconButton(
-                icon: const Icon(Icons.search, color: Colors.blue),
+                icon: const Icon(Icons.search, color: Color(0xFF4E85FF)),
                 onPressed: () {
                   Navigator.push(
                     context,
-                    MaterialPageRoute(
-                      builder: (context) => const SearchPage(), // Navigate to SearchPage
-                    ),
+                    MaterialPageRoute(builder: (context) => const SearchPage()),
                   );
                 },
               ),
               IconButton(
-                icon: const Icon(Icons.account_circle, color: Colors.green),
+                icon: const Icon(Icons.account_circle, color: Color(0xFF34C759)),
                 onPressed: () {
                   Navigator.push(
                     context,
@@ -238,9 +312,33 @@ class ClinicStaffDashboard extends StatelessWidget {
                   );
                 },
               ),
-              const SizedBox(width: 50), // Space for the middle button
+              SizedBox(
+                width: 60,
+                height: 60,
+                child: FloatingActionButton(
+                  backgroundColor: const Color(0xFF4E85FF),
+                  child: const Icon(Icons.add, color: Colors.white),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => const GenerateMCPage()),
+                    );
+                  },
+                ),
+              ),
               IconButton(
-                icon: const Icon(Icons.settings, color: Colors.orange),
+                icon: const Icon(Icons.folder, color: Color(0xFFFFCC00)),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const AllQRCodesPage(),
+                    ),
+                  );
+                },
+              ),
+              IconButton(
+                icon: const Icon(Icons.settings, color: Color(0xFFFF9500)),
                 onPressed: () {
                   Navigator.push(
                     context,
@@ -250,28 +348,9 @@ class ClinicStaffDashboard extends StatelessWidget {
                   );
                 },
               ),
-              IconButton(
-                icon: const Icon(Icons.logout, color: Colors.red),
-                onPressed: () async {
-                  await FirebaseAuth.instance.signOut();
-                  Navigator.pushNamedAndRemoveUntil(
-                      context, '/loginRegister', (route) => false);
-                },
-              ),
             ],
           ),
         ),
-        floatingActionButton: FloatingActionButton(
-          backgroundColor: Colors.orange,
-          child: const Icon(Icons.medical_services, size: 32),
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => const GenerateMCPage()),
-            );
-          },
-        ),
-        floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       ),
     );
   }

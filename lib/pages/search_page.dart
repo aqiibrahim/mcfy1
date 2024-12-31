@@ -15,6 +15,10 @@ class _SearchPageState extends State<SearchPage> {
   List<QueryDocumentSnapshot> _searchResults = [];
   bool _isSearching = false;
 
+  void _onSearchChanged() {
+    _performSearch(_searchController.text.trim());
+  }
+
   Future<void> _performSearch(String query) async {
     if (query.isEmpty) {
       setState(() {
@@ -33,19 +37,21 @@ class _SearchPageState extends State<SearchPage> {
       final searchSnapshot = await FirebaseFirestore.instance
           .collection('medical_certificates')
           .where('generatedBy', isEqualTo: userId)
-          .where('name', isEqualTo: query)
+          .where('name', isGreaterThanOrEqualTo: query)
+          .where('name', isLessThan: query + '\uf8ff')
           .get();
 
       final matricSnapshot = await FirebaseFirestore.instance
           .collection('medical_certificates')
           .where('generatedBy', isEqualTo: userId)
-          .where('matricNumber', isEqualTo: query)
+          .where('matricNumber', isGreaterThanOrEqualTo: query)
+          .where('matricNumber', isLessThan: query + '\uf8ff')
           .get();
 
       setState(() {
         _searchResults = [
           ...searchSnapshot.docs,
-          ...matricSnapshot.docs
+          ...matricSnapshot.docs,
         ];
         _isSearching = false;
       });
@@ -55,6 +61,19 @@ class _SearchPageState extends State<SearchPage> {
         _isSearching = false;
       });
     }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController.addListener(_onSearchChanged);
+  }
+
+  @override
+  void dispose() {
+    _searchController.removeListener(_onSearchChanged);
+    _searchController.dispose();
+    super.dispose();
   }
 
   @override
@@ -90,7 +109,6 @@ class _SearchPageState extends State<SearchPage> {
                   },
                 ),
               ),
-              onSubmitted: _performSearch,
               style: const TextStyle(color: Colors.white),
             ),
           ),

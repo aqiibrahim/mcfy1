@@ -281,7 +281,7 @@ Widget _buildLoginForm() {
               borderRadius: BorderRadius.circular(10),
               borderSide: BorderSide.none,
             ),
-            hintText: 'ID Number',
+            hintText: 'Staff ID',
             hintStyle: const TextStyle(color: Colors.white70),
             prefixIcon: const Icon(Icons.badge, color: Colors.white70),
           ),

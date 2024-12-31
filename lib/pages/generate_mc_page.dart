@@ -7,7 +7,6 @@ import 'package:encrypt/encrypt.dart' as encrypt; // For encryption
 import 'package:barcode/barcode.dart';
 import 'mc_display_page.dart';
 
-
 class GenerateMCPage extends StatefulWidget {
   const GenerateMCPage({Key? key}) : super(key: key);
 
@@ -21,6 +20,7 @@ class _GenerateMCPageState extends State<GenerateMCPage> {
   final TextEditingController effectingFromController = TextEditingController();
   final TextEditingController untilController = TextEditingController();
   final TextEditingController departmentController = TextEditingController();
+  final TextEditingController diseaseController = TextEditingController();
 
   final _formKey = GlobalKey<FormState>();
   int _stayOffDays = 1; // Default value for the number picker
@@ -29,70 +29,60 @@ class _GenerateMCPageState extends State<GenerateMCPage> {
   final _key = encrypt.Key.fromUtf8('my 32 length key................'); // 32 chars key
   final _iv = encrypt.IV.fromLength(16); // Initialization vector for AES
 
-  Future<String> _encryptData(String plainText) async {
-    final encrypter = encrypt.Encrypter(encrypt.AES(encrypt.Key.fromUtf8('my 32 length key................')));
-    return encrypter.encrypt(plainText, iv: _iv).base64;
-  }
-
   Future<void> _generateMC() async {
-  if (_formKey.currentState!.validate()) {
-    try {
-      final userId = FirebaseAuth.instance.currentUser!.uid;
-      final documentId = FirebaseFirestore.instance.collection('medical_certificates').doc().id;
+    if (_formKey.currentState!.validate()) {
+      try {
+        final userId = FirebaseAuth.instance.currentUser!.uid;
+        final documentId = FirebaseFirestore.instance.collection('medical_certificates').doc().id;
 
-      // Gather all metadata to be stored
-      final mcData = {
-        'name': nameController.text.trim(),
-        'matricNumber': matricNumberController.text.trim(),
-        'stayOffDays': _stayOffDays,
-        'effectingFrom': effectingFromController.text.trim(),
-        'until': untilController.text.trim(),
-        'department': departmentController.text.trim(),
-        'serialNumber': documentId, // Unique serial number
-        'generatedDate': DateTime.now().toIso8601String(), // Generation date
-        'generatedBy': userId,
-      };
+        // Gather all metadata to be stored
+        final mcData = {
+          'name': nameController.text.trim(),
+          'matricNumber': matricNumberController.text.trim(),
+          'stayOffDays': _stayOffDays,
+          'effectingFrom': effectingFromController.text.trim(),
+          'until': untilController.text.trim(),
+          'department': departmentController.text.trim(),
+          'disease': diseaseController.text.trim(),
+          'serialNumber': documentId, // Unique serial number
+          'generatedDate': DateTime.now().toIso8601String(), // Generation date
+          'generatedBy': userId,
+        };
 
-      // Encrypt only the serial number
-      //final encryptedSerialNumber = await _encryptData(documentId);
-      //print('Generated Encrypted Data: $encryptedSerialNumber');
+        final qrData = documentId;
+        print('Generated QR Data (Unencrypted): $qrData');
 
-      // Store the serial number directly in the QR data
-      final qrData = documentId;
-      print('Generated QR Data (Unencrypted): $qrData');
+        // Save metadata to Firestore
+        await FirebaseFirestore.instance.collection('medical_certificates').doc(documentId).set({
+          ...mcData,
+          'qrData': qrData,
+          'timestamp': FieldValue.serverTimestamp(),
+        });
 
-
-      // Save metadata to Firestore
-      await FirebaseFirestore.instance.collection('medical_certificates').doc(documentId).set({
-        ...mcData, // Save all data
-        'qrData': qrData, // Store the encrypted serial number
-        'timestamp': FieldValue.serverTimestamp(),
-      });
-
-      // Navigate to MC Display Page
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => MCDisplayPage(
-            documentId: documentId, // Pass the Firestore document ID
+        // Navigate to MC Display Page
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => MCDisplayPage(
+              documentId: documentId,
+            ),
           ),
-        ),
-      );
+        );
 
-      // Clear the form fields
-      nameController.clear();
-      matricNumberController.clear();
-      effectingFromController.clear();
-      untilController.clear();
-      departmentController.clear();
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error: $e')),
-      );
+        // Clear the form fields
+        nameController.clear();
+        matricNumberController.clear();
+        effectingFromController.clear();
+        untilController.clear();
+        departmentController.clear();
+        diseaseController.clear();
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error: $e')),
+        );
+      }
     }
   }
-}
-
 
   Future<void> _selectDate(BuildContext context, TextEditingController controller) async {
     final DateTime? picked = await showDatePicker(
@@ -104,8 +94,16 @@ class _GenerateMCPageState extends State<GenerateMCPage> {
     if (picked != null) {
       setState(() {
         controller.text = DateFormat('dd/MM/yyyy').format(picked); // Format the date
+        if (controller == effectingFromController) {
+          _updateUntilDate(picked);
+        }
       });
     }
+  }
+
+  void _updateUntilDate(DateTime effectingFrom) {
+    final DateTime untilDate = effectingFrom.add(Duration(days: _stayOffDays - 1));
+    untilController.text = DateFormat('dd/MM/yyyy').format(untilDate);
   }
 
   @override
@@ -191,7 +189,7 @@ class _GenerateMCPageState extends State<GenerateMCPage> {
                       child: AbsorbPointer(
                         child: TextFormField(
                           controller: TextEditingController(
-                            text: '$_stayOffDays days', // Dynamically show the updated value
+                            text: '$_stayOffDays days',
                           ),
                           readOnly: true,
                           decoration: InputDecoration(
@@ -220,10 +218,18 @@ class _GenerateMCPageState extends State<GenerateMCPage> {
                     _buildLabel('Until (Date)'),
                     _buildDateField(
                       controller: untilController,
-                      hintText: 'Select end date',
+                      hintText: 'Automatically calculated',
                       onTap: () => _selectDate(context, untilController),
                       validator: (value) =>
                           value == null || value.isEmpty ? 'Please select a date' : null,
+                    ),
+
+                    _buildLabel('Disease'),
+                    _buildTextField(
+                      controller: diseaseController,
+                      hintText: 'Enter the disease',
+                      validator: (value) =>
+                          value == null || value.isEmpty ? 'Please enter the disease' : null,
                     ),
 
                     _buildLabel('Kulliyyah/Department'),
@@ -265,7 +271,7 @@ class _GenerateMCPageState extends State<GenerateMCPage> {
   }
 
   void _showNumberPicker(BuildContext context) {
-    int tempValue = _stayOffDays; // Temporary value to hold the current picker value
+    int tempValue = _stayOffDays;
 
     showDialog<int>(
       context: context,
@@ -280,22 +286,26 @@ class _GenerateMCPageState extends State<GenerateMCPage> {
                 value: tempValue,
                 onChanged: (value) {
                   dialogSetState(() {
-                    tempValue = value; // Update the temporary value dynamically
+                    tempValue = value;
                   });
                 },
               ),
               actions: [
                 TextButton(
                   onPressed: () {
-                    Navigator.of(context).pop(); // Close the dialog without saving
+                    Navigator.of(context).pop();
                   },
                   child: const Text('Cancel'),
                 ),
                 TextButton(
                   onPressed: () {
-                    Navigator.of(context).pop(); // Close the dialog
+                    Navigator.of(context).pop();
                     setState(() {
-                      _stayOffDays = tempValue; // Save the selected value
+                      _stayOffDays = tempValue;
+                      if (effectingFromController.text.isNotEmpty) {
+                        final effectingFromDate = DateFormat('dd/MM/yyyy').parse(effectingFromController.text);
+                        _updateUntilDate(effectingFromDate);
+                      }
                     });
                   },
                   child: const Text('OK'),
@@ -374,4 +384,3 @@ class _GenerateMCPageState extends State<GenerateMCPage> {
     );
   }
 }
-

@@ -43,9 +43,11 @@ class ClinicStaffDashboard extends StatelessWidget {
                             shape: BoxShape.circle,
                             gradient: const LinearGradient(
                               colors: [
-                                Color(0xFF6A1E55),
-                                Color(0xFF3B1C32),
+                                Color(0xFF8E44AD), // Deep purple
+                                Color(0xFF3498DB), // Soft blue
                               ],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
                             ),
                           ),
                           padding: const EdgeInsets.all(4),

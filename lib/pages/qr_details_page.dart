@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
-class QRDetailsPage extends StatelessWidget {
+class QRDetailsPage extends StatefulWidget {
   final String serialNumber;
   final Map<String, dynamic> mcData;
 
@@ -11,19 +12,98 @@ class QRDetailsPage extends StatelessWidget {
   }) : super(key: key);
 
   @override
+  _QRDetailsPageState createState() => _QRDetailsPageState();
+}
+
+class _QRDetailsPageState extends State<QRDetailsPage> {
+  String issuedBy = 'Loading...';
+
+  @override
+  void initState() {
+    super.initState();
+    fetchIssuer();
+  }
+
+  Future<void> fetchIssuer() async {
+    try {
+      final uid = widget.mcData['generatedBy'];
+      if (uid != null) {
+        final userDoc =
+            await FirebaseFirestore.instance.collection('users').doc(uid).get();
+        if (userDoc.exists) {
+          setState(() {
+            issuedBy = userDoc.data()?['username'] ?? 'Unknown';
+          });
+        } else {
+          setState(() {
+            issuedBy = 'Unknown';
+          });
+        }
+      } else {
+        setState(() {
+          issuedBy = 'Unknown';
+        });
+      }
+    } catch (e) {
+      setState(() {
+        issuedBy = 'Error fetching data';
+      });
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final topSpacing = MediaQuery.of(context).padding.top + kToolbarHeight + 40;
+
     return Scaffold(
       extendBodyBehindAppBar: true,
-      backgroundColor: const Color(0xFF1A1A1D), // Dark background
-      appBar: AppBar(
-        title: const Text(
-          'QR Details',
-          style: TextStyle(color: Colors.white),
+      backgroundColor: const Color(0xFFFFFFFF),
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(100),
+        child: Stack(
+          children: [
+            Container(
+              height: 120,
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    Color(0xFF5E4C92), // Similar to dashboard gradient
+                    Color(0xFF362D59),
+                  ],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                ),
+              ),
+            ),
+            SafeArea(
+              child: Center(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: IconButton(
+                          icon: const Icon(Icons.arrow_back, color: Colors.white),
+                          onPressed: () => Navigator.of(context).pop(),
+                        ),
+                      ),
+                      const Text(
+                        'QR Details',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        centerTitle: true,
-        iconTheme: const IconThemeData(color: Colors.white),
       ),
       body: SingleChildScrollView(
         child: Padding(
@@ -31,7 +111,8 @@ class QRDetailsPage extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SizedBox(height: kToolbarHeight + 16), // Add space below app bar
+              // Add proper spacing after AppBar
+              SizedBox(height: topSpacing),
 
               // Serial Number Section
               Container(
@@ -60,12 +141,11 @@ class QRDetailsPage extends StatelessWidget {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      serialNumber,
+                      widget.serialNumber,
                       style: const TextStyle(
                         fontSize: 18,
                         color: Color(0xFFECEDF5),
                       ),
-                      textAlign: TextAlign.start,
                     ),
                   ],
                 ),
@@ -79,72 +159,83 @@ class QRDetailsPage extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.bold,
-                  color: Colors.white,
+                  color: Colors.black87,
                 ),
               ),
               const SizedBox(height: 12),
-              ListView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: mcData.length,
-                itemBuilder: (context, index) {
-                  final entry = mcData.entries.elementAt(index);
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 16),
-                    child: Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        gradient: const LinearGradient(
-                          colors: [
-                            Color(0xFF3A3B59), // Light Violet
-                            Color(0xFF2A2B47), // Dark Violet
-                          ],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        ),
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.2),
-                            blurRadius: 10,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(
-                            flex: 3,
-                            child: Text(
-                              '${entry.key}:',
-                              style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.w600,
-                                color: Color(0xFFF6F7FA),
-                              ),
-                            ),
-                          ),
-                          Expanded(
-                            flex: 5,
-                            child: Text(
-                              '${entry.value}',
-                              style: const TextStyle(
-                                fontSize: 16,
-                                color: Color(0xFFCED1E6),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                },
-              ),
+
+              // Display Details
+              ..._buildMCDetails(),
             ],
           ),
         ),
       ),
     );
+  }
+
+  List<Widget> _buildMCDetails() {
+    final details = [
+      {'label': 'Name', 'value': widget.mcData['name'] ?? 'Unknown'},
+      {'label': 'Matric Number', 'value': widget.mcData['matricNumber'] ?? 'Unknown'},
+      {'label': 'Kulliyyah', 'value': widget.mcData['department'] ?? 'Unknown'},
+      {'label': 'Disease', 'value': widget.mcData['disease'] ?? 'Unknown'},
+      {'label': 'Stay-Off Days', 'value': widget.mcData['stayOffDays'] ?? 'Unknown'},
+      {'label': 'Effective From', 'value': widget.mcData['effectiveFrom'] ?? 'Unknown'},
+      {'label': 'Until', 'value': widget.mcData['until'] ?? 'Unknown'},
+      {'label': 'Issued By', 'value': issuedBy},
+    ];
+
+    return details.map((detail) {
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 16),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [
+                Color(0xFF3A3B59),
+                Color(0xFF2A2B47),
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(16),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.2),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                flex: 3,
+                child: Text(
+                  '${detail['label']}:',
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFFF6F7FA),
+                  ),
+                ),
+              ),
+              Expanded(
+                flex: 5,
+                child: Text(
+                  '${detail['value']}',
+                  style: const TextStyle(
+                    fontSize: 16,
+                    color: Color(0xFFCED1E6),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }).toList();
   }
 }

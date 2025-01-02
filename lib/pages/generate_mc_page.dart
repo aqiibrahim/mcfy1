@@ -109,163 +109,146 @@ class _GenerateMCPageState extends State<GenerateMCPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Stack(
-        children: [
-          // Background Gradient
-          Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  Color(0xFF1A1A1D), // Dark gray
-                  Color(0xFF3B1C32), // Deep purple
-                  Color(0xFF6A1E55), // Vibrant purple
-                ],
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-              ),
-            ),
-          ),
-          SafeArea(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(20.0),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+      backgroundColor: Colors.white, // Set background to white
+      body: SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(20.0),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // AppBar
+                Row(
                   children: [
-                    // AppBar
-                    Row(
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.arrow_back, color: Colors.white),
-                          onPressed: () {
-                            Navigator.pop(context);
-                          },
-                        ),
-                        const Text(
-                          'Generate MC',
-                          style: TextStyle(
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ],
+                    IconButton(
+                      icon: const Icon(Icons.arrow_back, color: Colors.black),
+                      onPressed: () {
+                        Navigator.pop(context);
+                      },
                     ),
-                    const SizedBox(height: 20),
-
-                    // Title
                     const Text(
-                      'Input MC Details',
+                      'Generate MC',
                       style: TextStyle(
                         fontSize: 22,
                         fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-
-                    // Form Fields
-                    _buildLabel('Name'),
-                    _buildTextField(
-                      controller: nameController,
-                      hintText: 'Enter full name',
-                      validator: (value) =>
-                          value == null || value.isEmpty ? 'Please enter a name' : null,
-                    ),
-
-                    _buildLabel('Matric Number'),
-                    _buildTextField(
-                      controller: matricNumberController,
-                      hintText: 'Enter matric number',
-                      validator: (value) => value == null || value.isEmpty
-                          ? 'Please enter a matric number'
-                          : null,
-                    ),
-
-                    _buildLabel('Stay Off Works (Days)'),
-                    GestureDetector(
-                      onTap: () => _showNumberPicker(context),
-                      child: AbsorbPointer(
-                        child: TextFormField(
-                          controller: TextEditingController(
-                            text: '$_stayOffDays days',
-                          ),
-                          readOnly: true,
-                          decoration: InputDecoration(
-                            hintText: '$_stayOffDays days',
-                            filled: true,
-                            fillColor: Colors.white.withOpacity(0.1),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            hintStyle: const TextStyle(color: Colors.white54),
-                          ),
-                          style: const TextStyle(color: Colors.white),
-                        ),
-                      ),
-                    ),
-
-                    _buildLabel('Effecting From (Date)'),
-                    _buildDateField(
-                      controller: effectingFromController,
-                      hintText: 'Select start date',
-                      onTap: () => _selectDate(context, effectingFromController),
-                      validator: (value) =>
-                          value == null || value.isEmpty ? 'Please select a date' : null,
-                    ),
-
-                    _buildLabel('Until (Date)'),
-                    _buildDateField(
-                      controller: untilController,
-                      hintText: 'Automatically calculated',
-                      onTap: () => _selectDate(context, untilController),
-                      validator: (value) =>
-                          value == null || value.isEmpty ? 'Please select a date' : null,
-                    ),
-
-                    _buildLabel('Disease'),
-                    _buildTextField(
-                      controller: diseaseController,
-                      hintText: 'Enter the disease',
-                      validator: (value) =>
-                          value == null || value.isEmpty ? 'Please enter the disease' : null,
-                    ),
-
-                    _buildLabel('Kulliyyah/Department'),
-                    _buildTextField(
-                      controller: departmentController,
-                      hintText: 'Enter kulliyyah or department',
-                      validator: (value) => value == null || value.isEmpty
-                          ? 'Please enter the kulliyyah/department'
-                          : null,
-                    ),
-
-                    const SizedBox(height: 30),
-
-                    // Generate Button
-                    Center(
-                      child: ElevatedButton(
-                        onPressed: _generateMC,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.orange,
-                          padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 40),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                        ),
-                        child: const Text(
-                          'Generate',
-                          style: TextStyle(fontSize: 18, color: Colors.white),
-                        ),
+                        color: Colors.black,
                       ),
                     ),
                   ],
                 ),
-              ),
+                const SizedBox(height: 20),
+
+                // Title
+                const Text(
+                  'Input MC Details',
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black,
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                // Form Fields
+                _buildLabel('Name'),
+                _buildTextField(
+                  controller: nameController,
+                  hintText: 'Enter full name',
+                  validator: (value) =>
+                      value == null || value.isEmpty ? 'Please enter a name' : null,
+                ),
+
+                _buildLabel('Matric Number'),
+                _buildTextField(
+                  controller: matricNumberController,
+                  hintText: 'Enter matric number',
+                  validator: (value) =>
+                      value == null || value.isEmpty ? 'Please enter a matric number' : null,
+                ),
+
+                _buildLabel('Stay Off Works (Days)'),
+                GestureDetector(
+                  onTap: () => _showNumberPicker(context),
+                  child: AbsorbPointer(
+                    child: TextFormField(
+                      controller: TextEditingController(
+                        text: '$_stayOffDays days',
+                      ),
+                      readOnly: true,
+                      decoration: InputDecoration(
+                        hintText: '$_stayOffDays days',
+                        filled: true,
+                        fillColor: Colors.grey[200],
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        hintStyle: const TextStyle(color: Colors.black54),
+                      ),
+                      style: const TextStyle(color: Colors.black),
+                    ),
+                  ),
+                ),
+
+                _buildLabel('Effecting From (Date)'),
+                _buildDateField(
+                  controller: effectingFromController,
+                  hintText: 'Select start date',
+                  onTap: () => _selectDate(context, effectingFromController),
+                  validator: (value) =>
+                      value == null || value.isEmpty ? 'Please select a date' : null,
+                ),
+
+                _buildLabel('Until (Date)'),
+                _buildDateField(
+                  controller: untilController,
+                  hintText: 'Automatically calculated',
+                  onTap: () => _selectDate(context, untilController),
+                  validator: (value) =>
+                      value == null || value.isEmpty ? 'Please select a date' : null,
+                ),
+
+                _buildLabel('Disease'),
+                _buildTextField(
+                  controller: diseaseController,
+                  hintText: 'Enter the disease',
+                  validator: (value) =>
+                      value == null || value.isEmpty ? 'Please enter the disease' : null,
+                ),
+
+                _buildLabel('Kulliyyah/Department'),
+                _buildTextField(
+                  controller: departmentController,
+                  hintText: 'Enter kulliyyah or department',
+                  validator: (value) =>
+                      value == null || value.isEmpty
+                          ? 'Please enter the kulliyyah/department'
+                          : null,
+                ),
+
+                const SizedBox(height: 30),
+
+                // Generate Button
+                Center(
+                  child: ElevatedButton(
+                    onPressed: _generateMC,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.orange,
+                      padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 40),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    child: const Text(
+                      'Generate',
+                      style: TextStyle(fontSize: 18, color: Colors.white),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ),
-        ],
+        ),
       ),
     );
   }
@@ -303,7 +286,8 @@ class _GenerateMCPageState extends State<GenerateMCPage> {
                     setState(() {
                       _stayOffDays = tempValue;
                       if (effectingFromController.text.isNotEmpty) {
-                        final effectingFromDate = DateFormat('dd/MM/yyyy').parse(effectingFromController.text);
+                        final effectingFromDate = DateFormat('dd/MM/yyyy')
+                            .parse(effectingFromController.text);
                         _updateUntilDate(effectingFromDate);
                       }
                     });
@@ -326,7 +310,7 @@ class _GenerateMCPageState extends State<GenerateMCPage> {
         style: const TextStyle(
           fontSize: 16,
           fontWeight: FontWeight.w500,
-          color: Colors.white70,
+          color: Colors.black54,
         ),
       ),
     );
@@ -344,13 +328,13 @@ class _GenerateMCPageState extends State<GenerateMCPage> {
       decoration: InputDecoration(
         hintText: hintText,
         filled: true,
-        fillColor: Colors.white.withOpacity(0.1),
+        fillColor: Colors.grey[200],
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(10),
         ),
-        hintStyle: const TextStyle(color: Colors.white54),
+        hintStyle: const TextStyle(color: Colors.black54),
       ),
-      style: const TextStyle(color: Colors.white),
+      style: const TextStyle(color: Colors.black),
       validator: validator,
     );
   }
@@ -370,14 +354,14 @@ class _GenerateMCPageState extends State<GenerateMCPage> {
           decoration: InputDecoration(
             hintText: hintText,
             filled: true,
-            fillColor: Colors.white.withOpacity(0.1),
+            fillColor: Colors.grey[200],
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(10),
             ),
-            suffixIcon: const Icon(Icons.calendar_today, color: Colors.white70),
-            hintStyle: const TextStyle(color: Colors.white54),
+            suffixIcon: const Icon(Icons.calendar_today, color: Colors.black54),
+            hintStyle: const TextStyle(color: Colors.black54),
           ),
-          style: const TextStyle(color: Colors.white),
+          style: const TextStyle(color: Colors.black),
           validator: validator,
         ),
       ),

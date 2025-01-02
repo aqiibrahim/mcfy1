@@ -7,6 +7,7 @@ import 'settings_page.dart';
 import 'find_user_page.dart';
 import 'report_list_view.dart';
 import 'login_register_page.dart'; // Add login page for redirection
+import 'admin_user_list.dart'; // Import the Admin User List page
 
 class AdminDashboard extends StatefulWidget {
   const AdminDashboard({Key? key}) : super(key: key);
@@ -197,6 +198,37 @@ class _AdminDashboardState extends State<AdminDashboard> {
                       },
                     ),
                   ],
+                ),
+              ),
+              const SizedBox(height: 20),
+              // User List Button
+              Center(
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const AdminUserList(),
+                      ),
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF2B2129),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                        vertical: 15, horizontal: 30),
+                  ),
+                  icon: const Icon(
+                    Icons.group,
+                    color: Color(0xFFE5D1B8),
+                    size: 28,
+                  ),
+                  label: const Text(
+                    'User List',
+                    style: TextStyle(color: Color(0xFFE5D1B8), fontSize: 18),
+                  ),
                 ),
               ),
               const SizedBox(height: 20),

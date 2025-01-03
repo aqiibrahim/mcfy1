@@ -101,25 +101,56 @@ class MCDisplayPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Medical Certificate'),
-        backgroundColor: Colors.transparent,
-        elevation: 2,
-        flexibleSpace: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                Color(0xFF1A1A1D),
-                Color(0xFF3B1C32),
-                Color(0xFF6A1E55),
-              ],
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
+      extendBodyBehindAppBar: true,
+      backgroundColor: Colors.white, // Set the background to white
+      appBar: PreferredSize(
+        preferredSize: const Size.fromHeight(100),
+        child: Stack(
+          children: [
+            Container(
+              height: 120,
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    Color(0xFF1A1A1D), // Clinic dashboard dark gray
+                    Color(0xFF3B1C32), // Clinic dashboard deep purple
+                    Color(0xFF6A1E55), // Clinic dashboard vibrant purple
+                  ],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                ),
+              ),
             ),
-          ),
+            SafeArea(
+              child: Center(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: Stack(
+                    alignment: Alignment.center,
+                    children: [
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: IconButton(
+                          icon: const Icon(Icons.arrow_back, color: Colors.white),
+                          onPressed: () => Navigator.of(context).pop(),
+                        ),
+                      ),
+                      const Text(
+                        'Medical Certificate',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
       ),
-      extendBodyBehindAppBar: true,
       body: FutureBuilder<DocumentSnapshot>(
         future: FirebaseFirestore.instance
             .collection('medical_certificates')
@@ -140,91 +171,94 @@ class MCDisplayPage extends StatelessWidget {
 
           final data = snapshot.data!.data() as Map<String, dynamic>;
 
-          return Stack(
-            children: [
-              // Gradient Background
-              Container(
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      Color(0xFF1A1A1D), // Dark gray
-                      Color(0xFF3B1C32), // Deep purple
-                      Color(0xFF6A1E55), // Vibrant purple
-                    ],
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                  ),
-                ),
-              ),
-              Center(
-                child: SafeArea(
-                  child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.center,
-                      children: [
-                        Card(
-                          color: const Color(0xFF3B1C32), // Match with the theme
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(20),
+          return Center(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Card(
+                    color: const Color(0xFF3B1C32),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    elevation: 5,
+                    shadowColor: Colors.black.withOpacity(0.3),
+                    child: Padding(
+                      padding: const EdgeInsets.all(25),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Text(
+                            'Name: ${data['name']}',
+                            style: const TextStyle(fontSize: 18, color: Colors.white),
+                            textAlign: TextAlign.center,
                           ),
-                          elevation: 5, // Adds a floating effect
-                          shadowColor: Colors.black.withOpacity(0.3),
-                          child: Padding(
-                            padding: const EdgeInsets.all(25),
-                            child: Column(
-                              children: [
-                                Text(
-                                  'Name: ${data['name']}',
-                                  style: const TextStyle(fontSize: 18, color: Colors.white),
-                                ),
-                                const SizedBox(height: 5),
-                                Text(
-                                  'Matric Number: ${data['matricNumber']}',
-                                  style: const TextStyle(fontSize: 18, color: Colors.white),
-                                ),
-                                const SizedBox(height: 5),
-                                Text(
-                                  'Department: ${data['department']}',
-                                  style: const TextStyle(fontSize: 18, color: Colors.white),
-                                ),
-                                const SizedBox(height: 10),
-                                QrImageView(
-                                  data: data['qrData'],
-                                  size: 150.0,
-                                  backgroundColor: Colors.white,
-                                ),
-                              ],
-                            ),
+                          const SizedBox(height: 5),
+                          Text(
+                            'Matric Number: ${data['matricNumber']}',
+                            style: const TextStyle(fontSize: 18, color: Colors.white),
+                            textAlign: TextAlign.center,
                           ),
-                        ),
-                        const SizedBox(height: 20),
-                        ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: const Color(0xFFFFA726),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 30),
+                          const SizedBox(height: 5),
+                          Text(
+                            'Department: ${data['department']}',
+                            style: const TextStyle(fontSize: 18, color: Colors.white),
+                            textAlign: TextAlign.center,
                           ),
-                          onPressed: () async {
-                            final pdf = await _generatePDF(data);
-                            await Printing.layoutPdf(
-                              onLayout: (format) async => pdf,
-                            );
-                          },
-                          child: const Text(
-                            'Print MC',
-                            style: TextStyle(fontSize: 18, color: Colors.white),
+                          const SizedBox(height: 20),
+                          QrImageView(
+                            data: data['qrData'],
+                            size: 150.0,
+                            backgroundColor: Colors.white,
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
-                ),
+                  const SizedBox(height: 30),
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 80),
+                      shadowColor: Colors.transparent,
+                      backgroundColor: Colors.transparent, // Set background to transparent
+                    ),
+                    onPressed: () async {
+                      final pdf = await _generatePDF(data);
+                      await Printing.layoutPdf(
+                        onLayout: (format) async => pdf,
+                      );
+                    },
+                    child: Ink(
+                      decoration: const BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [
+                            Color(0xFF1A1A1D), // Clinic dashboard dark gray
+                            Color(0xFF3B1C32), // Clinic dashboard deep purple
+                            Color(0xFF6A1E55), // Clinic dashboard vibrant purple
+                          ],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.all(Radius.circular(10)),
+                      ),
+                      child: Container(
+                        alignment: Alignment.center,
+                        padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 30),
+                        child: const Text(
+                          'Print MC',
+                          style: TextStyle(fontSize: 18, color: Colors.white),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ],
+            ),
           );
         },
       ),

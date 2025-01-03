@@ -5,11 +5,86 @@ import 'package:mcfy1/pages/generate_mc_page.dart';
 import 'package:mcfy1/pages/profile_page.dart';
 import 'package:mcfy1/pages/settings_page.dart';
 import 'package:mcfy1/pages/mc_display_page.dart';
-import 'package:mcfy1/pages/search_page.dart';
 import 'package:mcfy1/pages/all_qr_codes_page.dart';
+import 'search_page.dart';
 
-class ClinicStaffDashboard extends StatelessWidget {
+class ClinicStaffDashboard extends StatefulWidget {
   const ClinicStaffDashboard({Key? key}) : super(key: key);
+
+  @override
+  State<ClinicStaffDashboard> createState() => _ClinicStaffDashboardState();
+}
+
+class _ClinicStaffDashboardState extends State<ClinicStaffDashboard> {
+  final TextEditingController _searchController = TextEditingController();
+  List<QueryDocumentSnapshot> _filteredDocs = [];
+  bool _isSearching = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _searchController.addListener(_onSearchChanged);
+    _fetchRecentActivity();
+  }
+
+  @override
+  void dispose() {
+    _searchController.removeListener(_onSearchChanged);
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _fetchRecentActivity() async {
+    final userId = FirebaseAuth.instance.currentUser?.uid;
+    if (userId != null) {
+      final querySnapshot = await FirebaseFirestore.instance
+          .collection('medical_certificates')
+          .where('generatedBy', isEqualTo: userId)
+          .orderBy('timestamp', descending: true)
+          .get();
+
+      setState(() {
+        _filteredDocs = querySnapshot.docs;
+      });
+    }
+  }
+
+  void _onSearchChanged() {
+    _filterResults(_searchController.text.trim());
+  }
+
+  void _filterResults(String query) {
+    if (query.isEmpty) {
+      _fetchRecentActivity();
+      return;
+    }
+
+    setState(() {
+      _isSearching = true;
+    });
+
+    final userId = FirebaseAuth.instance.currentUser?.uid;
+    if (userId != null) {
+      FirebaseFirestore.instance
+          .collection('medical_certificates')
+          .where('generatedBy', isEqualTo: userId)
+          .get()
+          .then((querySnapshot) {
+        final results = querySnapshot.docs.where((doc) {
+          final data = doc.data() as Map<String, dynamic>;
+          final name = (data['name'] ?? '').toLowerCase();
+          final matricNumber = (data['matricNumber'] ?? '').toLowerCase();
+          final lowerQuery = query.toLowerCase();
+          return name.contains(lowerQuery) || matricNumber.contains(lowerQuery);
+        }).toList();
+
+        setState(() {
+          _filteredDocs = results;
+          _isSearching = false;
+        });
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -122,39 +197,29 @@ class ClinicStaffDashboard extends StatelessWidget {
               const SizedBox(height: 20),
 
               // Search Bar
-              GestureDetector(
-                onTap: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const SearchPage()),
-                  );
-                },
-                child: Container(
-                  margin: const EdgeInsets.symmetric(horizontal: 20),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: TextField(
+                  controller: _searchController,
+                  decoration: InputDecoration(
+                    filled: true,
+                    fillColor: Colors.white,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(30),
+                      borderSide: BorderSide.none,
+                    ),
+                    hintText: 'Search patients by name or matric number',
+                    hintStyle: const TextStyle(color: Colors.black54),
+                    prefixIcon: const Icon(Icons.search, color: Colors.black54),
+                    suffixIcon: IconButton(
+                      icon: const Icon(Icons.clear, color: Colors.black54),
+                      onPressed: () {
+                        _searchController.clear();
+                        _fetchRecentActivity();
+                      },
+                    ),
                   ),
-                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: const [
-                      Text(
-                        "Search patients by name or matric number...",
-                        style: TextStyle(
-                          color: Color(0xFF9DA3B4),
-                        ),
-                      ),
-                      Icon(Icons.search, color: Color(0xFF6A1E55)),
-                    ],
-                  ),
+                  style: const TextStyle(color: Colors.black),
                 ),
               ),
               const SizedBox(height: 20),
@@ -176,97 +241,87 @@ class ClinicStaffDashboard extends StatelessWidget {
                       ),
                       const SizedBox(height: 10),
                       Expanded(
-                        child: StreamBuilder<QuerySnapshot>(
-                          stream: FirebaseFirestore.instance
-                              .collection('medical_certificates')
-                              .where('generatedBy',
-                                  isEqualTo: FirebaseAuth.instance.currentUser?.uid)
-                              .orderBy('timestamp', descending: true)
-                              .snapshots(),
-                          builder: (context, snapshot) {
-                            if (!snapshot.hasData) {
-                              return const Center(
-                                child: CircularProgressIndicator(),
-                              );
-                            }
-
-                            final docs = snapshot.data!.docs;
-                            if (docs.isEmpty) {
-                              return const Center(
-                                child: Text(
-                                  'No recent activity.',
-                                  style: TextStyle(color: Color(0xFF9DA3B4)),
-                                ),
-                              );
-                            }
-
-                            return ListView.builder(
-                              itemCount: docs.length,
-                              itemBuilder: (context, index) {
-                                final activity = docs[index].data() as Map<String, dynamic>;
-                                final name = activity['name'] ?? 'Unknown';
-                                final matricNumber = activity['matricNumber'] ?? 'Unknown';
-                                final stayOffDays = activity['stayOffDays'] ?? 'Unknown';
-                                final documentId = docs[index].id;
-
-                                return Container(
-                                  margin: const EdgeInsets.symmetric(vertical: 8.0),
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(16),
-                                    gradient: const LinearGradient(
-                                      colors: [
-                                        Color(0xFF6A1E55),
-                                        Color(0xFF3B1C32),
-                                      ],
-                                      begin: Alignment.topLeft,
-                                      end: Alignment.bottomRight,
+                        child: _isSearching
+                            ? const Center(child: CircularProgressIndicator())
+                            : _filteredDocs.isEmpty
+                                ? const Center(
+                                    child: Text(
+                                      'No recent activity.',
+                                      style: TextStyle(color: Color(0xFF9DA3B4)),
                                     ),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.black.withOpacity(0.1),
-                                        blurRadius: 8,
-                                        offset: const Offset(0, 4),
-                                      ),
-                                    ],
-                                  ),
-                                  child: ListTile(
-                                    contentPadding: const EdgeInsets.all(16),
-                                    title: Text(
-                                      'Patient: $name',
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                    subtitle: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Text(
-                                          'Matric Number: $matricNumber',
-                                          style: const TextStyle(color: Colors.white70),
-                                        ),
-                                        Text(
-                                          'Stay-Off Days: $stayOffDays',
-                                          style: const TextStyle(color: Colors.white70),
-                                        ),
-                                      ],
-                                    ),
-                                    onTap: () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) => MCDisplayPage(
-                                            documentId: documentId,
+                                  )
+                                : ListView.builder(
+                                    itemCount: _filteredDocs.length,
+                                    itemBuilder: (context, index) {
+                                      final activity = _filteredDocs[index].data()
+                                          as Map<String, dynamic>;
+                                      final name = activity['name'] ?? 'Unknown';
+                                      final matricNumber =
+                                          activity['matricNumber'] ?? 'Unknown';
+                                      final stayOffDays =
+                                          activity['stayOffDays'] ?? 'Unknown';
+                                      final documentId = _filteredDocs[index].id;
+
+                                      return Container(
+                                        margin:
+                                            const EdgeInsets.symmetric(vertical: 8.0),
+                                        decoration: BoxDecoration(
+                                          borderRadius: BorderRadius.circular(16),
+                                          gradient: const LinearGradient(
+                                            colors: [
+                                              Color(0xFF6A1E55),
+                                              Color(0xFF3B1C32),
+                                            ],
+                                            begin: Alignment.topLeft,
+                                            end: Alignment.bottomRight,
                                           ),
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: Colors.black.withOpacity(0.1),
+                                              blurRadius: 8,
+                                              offset: const Offset(0, 4),
+                                            ),
+                                          ],
+                                        ),
+                                        child: ListTile(
+                                          contentPadding: const EdgeInsets.all(16),
+                                          title: Text(
+                                            'Patient: $name',
+                                            style: const TextStyle(
+                                              color: Colors.white,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                          subtitle: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Text(
+                                                'Matric Number: $matricNumber',
+                                                style: const TextStyle(
+                                                    color: Colors.white70),
+                                              ),
+                                              Text(
+                                                'Stay-Off Days: $stayOffDays',
+                                                style: const TextStyle(
+                                                    color: Colors.white70),
+                                              ),
+                                            ],
+                                          ),
+                                          onTap: () {
+                                            Navigator.push(
+                                              context,
+                                              MaterialPageRoute(
+                                                builder: (context) => MCDisplayPage(
+                                                  documentId: documentId,
+                                                ),
+                                              ),
+                                            );
+                                          },
                                         ),
                                       );
                                     },
                                   ),
-                                );
-                              },
-                            );
-                          },
-                        ),
                       ),
                     ],
                   ),

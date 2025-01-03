@@ -10,6 +10,7 @@ class AdminUserList extends StatefulWidget {
 }
 
 class _AdminUserListState extends State<AdminUserList> {
+  final TextEditingController _searchController = TextEditingController();
   String searchQuery = '';
 
   @override
@@ -27,25 +28,39 @@ class _AdminUserListState extends State<AdminUserList> {
         children: [
           // Search Bar
           Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: TextField(
-              decoration: InputDecoration(
-                hintText: 'Search by username or ID number...',
-                prefixIcon: const Icon(Icons.search, color: Color(0xFF6A1E55)),
-                filled: true,
-                fillColor: Colors.white,
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
-                ),
-                contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                hintStyle: const TextStyle(color: Color(0xFF9DA3B4)),
+            padding: const EdgeInsets.symmetric(vertical: 16.0, horizontal: 16.0),
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
               ),
-              onChanged: (value) {
-                setState(() {
-                  searchQuery = value.toLowerCase();
-                });
-              },
+              child: TextField(
+                controller: _searchController,
+                decoration: InputDecoration(
+                  prefixIcon: const Icon(Icons.search, color: Color(0xFF6A1E55)),
+                  hintText: 'Search by username or ID number...',
+                  hintStyle: const TextStyle(color: Color(0xFF9DA3B4)),
+                  filled: true,
+                  fillColor: Colors.white,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                  contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+                ),
+                onChanged: (value) {
+                  setState(() {
+                    searchQuery = value.toLowerCase();
+                  });
+                },
+              ),
             ),
           ),
 

@@ -14,8 +14,54 @@ class _SearchMCPageState extends State<SearchMCPage> {
   List<QueryDocumentSnapshot> searchResults = [];
   bool isLoading = false;
 
+  @override
+  void initState() {
+    super.initState();
+    searchController.addListener(() {
+      searchMC(searchController.text.trim());
+    });
+    fetchAllMCs();
+  }
+
+  @override
+  void dispose() {
+    searchController.dispose();
+    super.dispose();
+  }
+
+  // Fetch all medical certificates
+  Future<void> fetchAllMCs() async {
+    setState(() {
+      isLoading = true;
+    });
+
+    try {
+      final querySnapshot = await FirebaseFirestore.instance
+          .collection('medical_certificates')
+          .orderBy('timestamp', descending: true)
+          .get();
+
+      setState(() {
+        searchResults = querySnapshot.docs;
+      });
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e')),
+      );
+    }
+
+    setState(() {
+      isLoading = false;
+    });
+  }
+
   // Search Firestore for matching MC records
   Future<void> searchMC(String query) async {
+    if (query.isEmpty) {
+      fetchAllMCs();
+      return;
+    }
+
     setState(() {
       isLoading = true;
     });
@@ -32,7 +78,8 @@ class _SearchMCPageState extends State<SearchMCPage> {
       if (querySnapshot.docs.isEmpty) {
         final matricQuerySnapshot = await FirebaseFirestore.instance
             .collection('medical_certificates')
-            .where('matricNumber', isEqualTo: query)
+            .where('matricNumber', isGreaterThanOrEqualTo: query)
+            .where('matricNumber', isLessThanOrEqualTo: query + '\uf8ff')
             .get();
         searchResults = matricQuerySnapshot.docs;
       } else {
@@ -66,7 +113,7 @@ class _SearchMCPageState extends State<SearchMCPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Search Medical Certificates'),
+        title: const Text('Medical Certificates'),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -79,21 +126,22 @@ class _SearchMCPageState extends State<SearchMCPage> {
                 labelText: 'Search by Name or Matric Number',
                 border: OutlineInputBorder(),
                 suffixIcon: IconButton(
-                  icon: const Icon(Icons.search),
-                  onPressed: () => searchMC(searchController.text.trim()),
+                  icon: const Icon(Icons.clear),
+                  onPressed: () {
+                    searchController.clear();
+                  },
                 ),
               ),
-              onSubmitted: (value) => searchMC(value.trim()),
             ),
             const SizedBox(height: 16),
 
-            // Loading indicator while searching
+            // Loading indicator while fetching data
             if (isLoading)
               const Center(
                 child: CircularProgressIndicator(),
               ),
 
-            // List of search results
+            // List of all or search results
             if (!isLoading && searchResults.isNotEmpty)
               Expanded(
                 child: ListView.builder(
@@ -120,7 +168,7 @@ class _SearchMCPageState extends State<SearchMCPage> {
               const Expanded(
                 child: Center(
                   child: Text(
-                    'No results found.',
+                    'No medical certificates found.',
                     style: TextStyle(fontSize: 16),
                   ),
                 ),

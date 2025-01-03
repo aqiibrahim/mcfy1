@@ -180,7 +180,7 @@ class _QRDetailsPageState extends State<QRDetailsPage> {
       {'label': 'Kulliyyah', 'value': widget.mcData['department'] ?? 'Unknown'},
       {'label': 'Disease', 'value': widget.mcData['disease'] ?? 'Unknown'},
       {'label': 'Stay-Off Days', 'value': widget.mcData['stayOffDays'] ?? 'Unknown'},
-      {'label': 'Effective From', 'value': widget.mcData['effectiveFrom'] ?? 'Unknown'},
+      {'label': 'Effective From', 'value': widget.mcData['effectingFrom'] ?? 'Unknown'},
       {'label': 'Until', 'value': widget.mcData['until'] ?? 'Unknown'},
       {'label': 'Issued By', 'value': issuedBy},
     ];

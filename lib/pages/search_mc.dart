@@ -17,10 +17,10 @@ class _SearchMCPageState extends State<SearchMCPage> {
   @override
   void initState() {
     super.initState();
+    fetchAllMCs();
     searchController.addListener(() {
       searchMC(searchController.text.trim());
     });
-    fetchAllMCs();
   }
 
   @override
@@ -55,7 +55,7 @@ class _SearchMCPageState extends State<SearchMCPage> {
     });
   }
 
-  // Search Firestore for matching MC records
+  // Real-time search Firestore for matching MC records
   Future<void> searchMC(String query) async {
     if (query.isEmpty) {
       fetchAllMCs();
@@ -67,24 +67,24 @@ class _SearchMCPageState extends State<SearchMCPage> {
     });
 
     try {
-      // Query Firestore collection for name or matric number
-      final querySnapshot = await FirebaseFirestore.instance
+      final nameQuerySnapshot = await FirebaseFirestore.instance
           .collection('medical_certificates')
           .where('name', isGreaterThanOrEqualTo: query)
-          .where('name', isLessThanOrEqualTo: query + '\uf8ff')
+          .where('name', isLessThan: query + '\uf8ff')
           .get();
 
-      // Fallback to search by matric number if no name matches
-      if (querySnapshot.docs.isEmpty) {
-        final matricQuerySnapshot = await FirebaseFirestore.instance
-            .collection('medical_certificates')
-            .where('matricNumber', isGreaterThanOrEqualTo: query)
-            .where('matricNumber', isLessThanOrEqualTo: query + '\uf8ff')
-            .get();
-        searchResults = matricQuerySnapshot.docs;
-      } else {
-        searchResults = querySnapshot.docs;
-      }
+      final matricQuerySnapshot = await FirebaseFirestore.instance
+          .collection('medical_certificates')
+          .where('matricNumber', isGreaterThanOrEqualTo: query)
+          .where('matricNumber', isLessThan: query + '\uf8ff')
+          .get();
+
+      setState(() {
+        searchResults = [
+          ...nameQuerySnapshot.docs,
+          ...matricQuerySnapshot.docs,
+        ];
+      });
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Error: $e')),
@@ -113,35 +113,60 @@ class _SearchMCPageState extends State<SearchMCPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Medical Certificates'),
+        title: const Text('Search Medical Certificates'),
+        backgroundColor: const Color(0xFF6A1E55),
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            // Search bar
-            TextField(
-              controller: searchController,
-              decoration: InputDecoration(
-                labelText: 'Search by Name or Matric Number',
-                border: OutlineInputBorder(),
-                suffixIcon: IconButton(
-                  icon: const Icon(Icons.clear),
-                  onPressed: () {
-                    searchController.clear();
-                  },
-                ),
+            // Enhanced Search Bar
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.search, color: Colors.grey),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: TextField(
+                      controller: searchController,
+                      decoration: const InputDecoration(
+                        hintText: 'Search by Name or Matric Number...',
+                        border: InputBorder.none,
+                      ),
+                    ),
+                  ),
+                  if (searchController.text.isNotEmpty)
+                    GestureDetector(
+                      onTap: () {
+                        searchController.clear();
+                        fetchAllMCs();
+                      },
+                      child: const Icon(Icons.clear, color: Colors.grey),
+                    ),
+                ],
               ),
             ),
             const SizedBox(height: 16),
 
-            // Loading indicator while fetching data
+            // Loading indicator
             if (isLoading)
               const Center(
                 child: CircularProgressIndicator(),
               ),
 
-            // List of all or search results
+            // Search Results
             if (!isLoading && searchResults.isNotEmpty)
               Expanded(
                 child: ListView.builder(
@@ -153,17 +178,28 @@ class _SearchMCPageState extends State<SearchMCPage> {
                     final serialNumber = result['serialNumber']; // Assuming Firestore has 'serialNumber'
                     final mcData = result.data() as Map<String, dynamic>;
 
-                    return ListTile(
-                      title: Text(name),
-                      subtitle: Text('Matric Number: $matricNumber'),
-                      trailing: const Icon(Icons.arrow_forward),
-                      onTap: () => navigateToQRDetails(serialNumber, mcData), // Navigate to QRDetailsPage
+                    return Card(
+                      margin: const EdgeInsets.symmetric(vertical: 8),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 4,
+                      child: ListTile(
+                        contentPadding: const EdgeInsets.all(16),
+                        title: Text(
+                          name,
+                          style: const TextStyle(fontWeight: FontWeight.bold),
+                        ),
+                        subtitle: Text('Matric Number: $matricNumber'),
+                        trailing: const Icon(Icons.arrow_forward),
+                        onTap: () => navigateToQRDetails(serialNumber, mcData),
+                      ),
                     );
                   },
                 ),
               ),
 
-            // Message when no results are found
+            // No results message
             if (!isLoading && searchResults.isEmpty)
               const Expanded(
                 child: Center(

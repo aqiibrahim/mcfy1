@@ -113,7 +113,7 @@ class _AdminUserListState extends State<AdminUserList> {
                         title: Text(
                           'Username: $username',
                           style: const TextStyle(
-                            color: Color(0xFF6A1E55),
+                            color: Color.fromARGB(255, 255, 255, 255),
                             fontWeight: FontWeight.bold,
                           ),
                         ),

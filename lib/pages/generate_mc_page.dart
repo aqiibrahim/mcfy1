@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:numberpicker/numberpicker.dart'; // Import number picker package
+import 'package:numberpicker/numberpicker.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
-import 'package:encrypt/encrypt.dart' as encrypt; // For encryption
+import 'package:encrypt/encrypt.dart' as encrypt;
 import 'package:barcode/barcode.dart';
 import 'mc_display_page.dart';
 
@@ -23,11 +23,10 @@ class _GenerateMCPageState extends State<GenerateMCPage> {
   final TextEditingController diseaseController = TextEditingController();
 
   final _formKey = GlobalKey<FormState>();
-  int _stayOffDays = 1; // Default value for the number picker
+  int _stayOffDays = 1;
 
-  // Encryption setup
-  final _key = encrypt.Key.fromUtf8('my 32 length key................'); // 32 chars key
-  final _iv = encrypt.IV.fromLength(16); // Initialization vector for AES
+  final _key = encrypt.Key.fromUtf8('my 32 length key................');
+  final _iv = encrypt.IV.fromLength(16);
 
   Future<void> _generateMC() async {
     if (_formKey.currentState!.validate()) {
@@ -35,7 +34,6 @@ class _GenerateMCPageState extends State<GenerateMCPage> {
         final userId = FirebaseAuth.instance.currentUser!.uid;
         final documentId = FirebaseFirestore.instance.collection('medical_certificates').doc().id;
 
-        // Gather all metadata to be stored
         final mcData = {
           'name': nameController.text.trim(),
           'matricNumber': matricNumberController.text.trim(),
@@ -44,22 +42,19 @@ class _GenerateMCPageState extends State<GenerateMCPage> {
           'until': untilController.text.trim(),
           'department': departmentController.text.trim(),
           'disease': diseaseController.text.trim(),
-          'serialNumber': documentId, // Unique serial number
-          'generatedDate': DateTime.now().toIso8601String(), // Generation date
+          'serialNumber': documentId,
+          'generatedDate': DateTime.now().toIso8601String(),
           'generatedBy': userId,
         };
 
         final qrData = documentId;
-        print('Generated QR Data (Unencrypted): $qrData');
 
-        // Save metadata to Firestore
         await FirebaseFirestore.instance.collection('medical_certificates').doc(documentId).set({
           ...mcData,
           'qrData': qrData,
           'timestamp': FieldValue.serverTimestamp(),
         });
 
-        // Navigate to MC Display Page
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -69,7 +64,6 @@ class _GenerateMCPageState extends State<GenerateMCPage> {
           ),
         );
 
-        // Clear the form fields
         nameController.clear();
         matricNumberController.clear();
         effectingFromController.clear();
@@ -93,7 +87,7 @@ class _GenerateMCPageState extends State<GenerateMCPage> {
     );
     if (picked != null) {
       setState(() {
-        controller.text = DateFormat('dd/MM/yyyy').format(picked); // Format the date
+        controller.text = DateFormat('dd/MM/yyyy').format(picked);
         if (controller == effectingFromController) {
           _updateUntilDate(picked);
         }
@@ -109,7 +103,7 @@ class _GenerateMCPageState extends State<GenerateMCPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white, // Set background to white
+      backgroundColor: Colors.white,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(20.0),
@@ -118,7 +112,6 @@ class _GenerateMCPageState extends State<GenerateMCPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // AppBar
                 Row(
                   children: [
                     IconButton(
@@ -138,8 +131,6 @@ class _GenerateMCPageState extends State<GenerateMCPage> {
                   ],
                 ),
                 const SizedBox(height: 20),
-
-                // Title
                 const Text(
                   'Input MC Details',
                   style: TextStyle(
@@ -149,8 +140,6 @@ class _GenerateMCPageState extends State<GenerateMCPage> {
                   ),
                 ),
                 const SizedBox(height: 20),
-
-                // Form Fields
                 _buildLabel('Name'),
                 _buildTextField(
                   controller: nameController,
@@ -158,7 +147,6 @@ class _GenerateMCPageState extends State<GenerateMCPage> {
                   validator: (value) =>
                       value == null || value.isEmpty ? 'Please enter a name' : null,
                 ),
-
                 _buildLabel('Matric Number'),
                 _buildTextField(
                   controller: matricNumberController,
@@ -166,30 +154,17 @@ class _GenerateMCPageState extends State<GenerateMCPage> {
                   validator: (value) =>
                       value == null || value.isEmpty ? 'Please enter a matric number' : null,
                 ),
-
                 _buildLabel('Stay Off Works (Days)'),
                 GestureDetector(
                   onTap: () => _showNumberPicker(context),
                   child: AbsorbPointer(
-                    child: TextFormField(
-                      controller: TextEditingController(
-                        text: '$_stayOffDays days',
-                      ),
-                      readOnly: true,
-                      decoration: InputDecoration(
-                        hintText: '$_stayOffDays days',
-                        filled: true,
-                        fillColor: Colors.grey[200],
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        hintStyle: const TextStyle(color: Colors.black54),
-                      ),
-                      style: const TextStyle(color: Colors.black),
+                    child: _buildTextField(
+                      controller: TextEditingController(text: '$_stayOffDays days'),
+                      hintText: '$_stayOffDays days',
+                      validator: null,
                     ),
                   ),
                 ),
-
                 _buildLabel('Effecting From (Date)'),
                 _buildDateField(
                   controller: effectingFromController,
@@ -198,7 +173,6 @@ class _GenerateMCPageState extends State<GenerateMCPage> {
                   validator: (value) =>
                       value == null || value.isEmpty ? 'Please select a date' : null,
                 ),
-
                 _buildLabel('Until (Date)'),
                 _buildDateField(
                   controller: untilController,
@@ -207,7 +181,6 @@ class _GenerateMCPageState extends State<GenerateMCPage> {
                   validator: (value) =>
                       value == null || value.isEmpty ? 'Please select a date' : null,
                 ),
-
                 _buildLabel('Disease'),
                 _buildTextField(
                   controller: diseaseController,
@@ -215,30 +188,24 @@ class _GenerateMCPageState extends State<GenerateMCPage> {
                   validator: (value) =>
                       value == null || value.isEmpty ? 'Please enter the disease' : null,
                 ),
-
                 _buildLabel('Kulliyyah/Department'),
                 _buildTextField(
                   controller: departmentController,
                   hintText: 'Enter kulliyyah or department',
                   validator: (value) =>
-                      value == null || value.isEmpty
-                          ? 'Please enter the kulliyyah/department'
-                          : null,
+                      value == null || value.isEmpty ? 'Please enter the kulliyyah/department' : null,
                 ),
-
                 const SizedBox(height: 30),
-
-                // Generate Button
                 Center(
                   child: ElevatedButton(
-                    onPressed: _generateMC,
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.orange,
+                      backgroundColor: const Color(0xFF6A1E55),
                       padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 40),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(10),
                       ),
                     ),
+                    onPressed: _generateMC,
                     child: const Text(
                       'Generate',
                       style: TextStyle(fontSize: 18, color: Colors.white),
@@ -286,8 +253,7 @@ class _GenerateMCPageState extends State<GenerateMCPage> {
                     setState(() {
                       _stayOffDays = tempValue;
                       if (effectingFromController.text.isNotEmpty) {
-                        final effectingFromDate = DateFormat('dd/MM/yyyy')
-                            .parse(effectingFromController.text);
+                        final effectingFromDate = DateFormat('dd/MM/yyyy').parse(effectingFromController.text);
                         _updateUntilDate(effectingFromDate);
                       }
                     });
@@ -322,20 +288,35 @@ class _GenerateMCPageState extends State<GenerateMCPage> {
     TextInputType keyboardType = TextInputType.text,
     String? Function(String?)? validator,
   }) {
-    return TextFormField(
-      controller: controller,
-      keyboardType: keyboardType,
-      decoration: InputDecoration(
-        hintText: hintText,
-        filled: true,
-        fillColor: Colors.grey[200],
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(10),
+    return Container(
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [
+            Color(0xFF6A1E55),
+            Color(0xFF3B1C32),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
-        hintStyle: const TextStyle(color: Colors.black54),
+        borderRadius: BorderRadius.circular(10),
       ),
-      style: const TextStyle(color: Colors.black),
-      validator: validator,
+      child: TextFormField(
+        controller: controller,
+        keyboardType: keyboardType,
+        decoration: InputDecoration(
+          hintText: hintText,
+          filled: true,
+          fillColor: Colors.transparent,
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(10),
+            borderSide: BorderSide.none,
+          ),
+          contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+          hintStyle: const TextStyle(color: Colors.white70),
+        ),
+        style: const TextStyle(color: Colors.white),
+        validator: validator,
+      ),
     );
   }
 
@@ -347,22 +328,37 @@ class _GenerateMCPageState extends State<GenerateMCPage> {
   }) {
     return GestureDetector(
       onTap: onTap,
-      child: AbsorbPointer(
-        child: TextFormField(
-          controller: controller,
-          readOnly: true,
-          decoration: InputDecoration(
-            hintText: hintText,
-            filled: true,
-            fillColor: Colors.grey[200],
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
-            suffixIcon: const Icon(Icons.calendar_today, color: Colors.black54),
-            hintStyle: const TextStyle(color: Colors.black54),
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: const LinearGradient(
+            colors: [
+              Color(0xFF6A1E55),
+              Color(0xFF3B1C32),
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
           ),
-          style: const TextStyle(color: Colors.black),
-          validator: validator,
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: AbsorbPointer(
+          child: TextFormField(
+            controller: controller,
+            readOnly: true,
+            decoration: InputDecoration(
+              hintText: hintText,
+              filled: true,
+              fillColor: Colors.transparent,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+                borderSide: BorderSide.none,
+              ),
+              suffixIcon: const Icon(Icons.calendar_today, color: Colors.white70),
+              contentPadding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+              hintStyle: const TextStyle(color: Colors.white70),
+            ),
+            style: const TextStyle(color: Colors.white),
+            validator: validator,
+          ),
         ),
       ),
     );

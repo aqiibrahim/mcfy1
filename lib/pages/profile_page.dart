@@ -17,14 +17,16 @@ class ProfilePage extends StatefulWidget {
 
 class _ProfilePageState extends State<ProfilePage> {
   String? profileImageUrl;
-  int totalMCsGenerated = 0;
+  int totalMCsGenerated = 0; // Used only for Clinic Staff
   final ImagePicker _picker = ImagePicker();
 
   @override
   void initState() {
     super.initState();
     _fetchProfilePicture();
-    _fetchTotalMCs();
+    if (widget.role == 'ClinicStaff') {
+      _fetchTotalMCsGenerated(); // Fetch for Clinic Staff only
+    }
   }
 
   Future<void> _fetchProfilePicture() async {
@@ -41,7 +43,7 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
-  Future<void> _fetchTotalMCs() async {
+  Future<void> _fetchTotalMCsGenerated() async {
     final userId = FirebaseAuth.instance.currentUser?.uid;
 
     if (userId != null) {
@@ -68,17 +70,14 @@ class _ProfilePageState extends State<ProfilePage> {
         final uploadTask = await ref.putFile(file);
         final imageUrl = await uploadTask.ref.getDownloadURL();
 
-        // Save imageUrl to Firestore
         await FirebaseFirestore.instance.collection('users').doc(userId).update({'profileImageUrl': imageUrl});
 
         setState(() {
-          profileImageUrl = imageUrl; // Update the UI with the uploaded image
+          profileImageUrl = imageUrl;
         });
       } catch (e) {
         print('Upload error: $e');
       }
-    } else {
-      print('No file selected or user not logged in.');
     }
   }
 
@@ -86,52 +85,48 @@ class _ProfilePageState extends State<ProfilePage> {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => EditProfilePage(), // Define the EditProfilePage below
+        builder: (context) => EditProfilePage(),
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final Color backgroundColor = widget.role == 'ClinicStaff' ? const Color(0xFF680C5D) : const Color(0xFF2B2129);
-    final Color gradientStart = widget.role == 'ClinicStaff' ? const Color(0xFFF78FB3) : const Color(0xFFDD8E58);
-    final Color gradientEnd = widget.role == 'ClinicStaff' ? const Color(0xFF680C5D) : const Color(0xFF2B2129);
-    final Color iconColor = widget.role == 'ClinicStaff' ? const Color(0xFFFED4E0) : const Color(0xFFE5D1B8);
+    const Color primaryColor = Color(0xFF6A1E55);
+    const Color iconColor = Color(0xFF6A1E55);
+    const Color textColor = Color(0xFF37474F);
+    const Color dividerColor = Color(0xFF8E8E93);
+
+    final userId = FirebaseAuth.instance.currentUser?.uid;
 
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: backgroundColor,
+        backgroundColor: primaryColor,
         centerTitle: true,
-        title: Text(
+        title: const Text(
           'Profile',
           style: TextStyle(
             fontWeight: FontWeight.bold,
             fontSize: 24,
-            color: iconColor,
+            color: Colors.white,
           ),
         ),
         actions: [
           IconButton(
             icon: const Icon(Icons.edit),
-            color: iconColor,
+            color: Colors.white,
             onPressed: _navigateToEditProfile,
           ),
         ],
       ),
       body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [gradientStart, gradientEnd],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-        ),
+        color: Colors.white,
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: StreamBuilder<DocumentSnapshot>(
             stream: FirebaseFirestore.instance
                 .collection('users')
-                .doc(FirebaseAuth.instance.currentUser?.uid)
+                .doc(userId)
                 .snapshots(),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
@@ -142,7 +137,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 return const Center(
                   child: Text(
                     'User data not found.',
-                    style: TextStyle(color: Colors.white),
+                    style: TextStyle(color: textColor),
                   ),
                 );
               }
@@ -161,12 +156,12 @@ class _ProfilePageState extends State<ProfilePage> {
                       children: [
                         CircleAvatar(
                           radius: 50,
-                          backgroundColor: iconColor,
+                          backgroundColor: dividerColor,
                           backgroundImage: profileImageUrl != null
                               ? NetworkImage(profileImageUrl!) as ImageProvider
                               : null,
                           child: profileImageUrl == null
-                              ? Icon(Icons.person, size: 60, color: backgroundColor)
+                              ? Icon(Icons.person, size: 60, color: primaryColor)
                               : null,
                         ),
                         Positioned(
@@ -174,10 +169,10 @@ class _ProfilePageState extends State<ProfilePage> {
                           right: 0,
                           child: GestureDetector(
                             onTap: _uploadProfilePicture,
-                            child: CircleAvatar(
+                            child: const CircleAvatar(
                               radius: 18,
                               backgroundColor: Colors.white,
-                              child: Icon(Icons.camera_alt, size: 20, color: backgroundColor),
+                              child: Icon(Icons.camera_alt, size: 20, color: primaryColor),
                             ),
                           ),
                         ),
@@ -188,10 +183,10 @@ class _ProfilePageState extends State<ProfilePage> {
                   Center(
                     child: Text(
                       username,
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 22,
-                        color: iconColor,
+                        color: textColor,
                       ),
                     ),
                   ),
@@ -199,14 +194,14 @@ class _ProfilePageState extends State<ProfilePage> {
                   Center(
                     child: Text(
                       email,
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 16,
-                        color: iconColor,
+                        color: textColor,
                       ),
                     ),
                   ),
                   const SizedBox(height: 20),
-                  Divider(color: Colors.white.withOpacity(0.5)),
+                  Divider(color: dividerColor),
                   const SizedBox(height: 20),
                   _buildProfileItem(
                     title: 'Role',
@@ -222,91 +217,113 @@ class _ProfilePageState extends State<ProfilePage> {
                     iconColor: iconColor,
                   ),
                   const SizedBox(height: 20),
-                  Divider(color: Colors.white.withOpacity(0.5)),
+                  Divider(color: dividerColor),
                   const SizedBox(height: 20),
                   Center(
                     child: Text(
                       'Profile Statistics',
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 18,
-                        color: iconColor,
+                        color: textColor,
                       ),
                     ),
                   ),
                   const SizedBox(height: 10),
-                  _buildProfileItem(
-                    title: 'Total MCs Generated',
-                    value: totalMCsGenerated.toString(),
-                    icon: Icons.bar_chart,
-                    iconColor: iconColor,
-                  ),
-                  const SizedBox(height: 20),
-                  Divider(color: Colors.white.withOpacity(0.5)),
-                  const SizedBox(height: 20),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Center(
-                          child: Text(
-                            'Activity Timeline',
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 18,
-                              color: iconColor,
-                            ),
+                  widget.role == 'ClinicStaff'
+                      ? Text(
+                          'Total MCs Generated: $totalMCsGenerated',
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: iconColor,
                           ),
-                        ),
-                        Expanded(
-                          child: StreamBuilder<QuerySnapshot>(
-                            stream: FirebaseFirestore.instance
-                                .collection('loginHistory')
-                                .where('userId', isEqualTo: FirebaseAuth.instance.currentUser?.uid)
-                                .orderBy('timestamp', descending: true)
-                                .snapshots(),
-                            builder: (context, snapshot) {
-                              if (snapshot.connectionState == ConnectionState.waiting) {
-                                return const Center(child: CircularProgressIndicator());
-                              }
-
-                              if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                                return const Center(
-                                  child: Text(
-                                    'No login history found.',
-                                    style: TextStyle(color: Colors.white70),
-                                  ),
-                                );
-                              }
-
-                              final loginHistoryDocs = snapshot.data!.docs;
-
-                              return ListView.builder(
-                                shrinkWrap: true,
-                                itemCount: loginHistoryDocs.length,
-                                itemBuilder: (context, index) {
-                                  final loginData = loginHistoryDocs[index].data() as Map<String, dynamic>;
-                                  final timestamp = loginData['timestamp'] as Timestamp?;
-                                  final formattedDate = timestamp != null
-                                      ? DateFormat('dd MMM yyyy, hh:mm a').format(timestamp.toDate())
-                                      : 'Unknown';
-
-                                  return ListTile(
-                                    title: Text(
-                                      'Login Activity',
-                                      style: TextStyle(color: Colors.white),
-                                    ),
-                                    subtitle: Text(
-                                      formattedDate,
-                                      style: TextStyle(color: Colors.white70),
-                                    ),
-                                  );
-                                },
+                        )
+                      : StreamBuilder<QuerySnapshot>(
+                          stream: FirebaseFirestore.instance
+                              .collection('users')
+                              .doc(userId)
+                              .collection('scanned_qrs')
+                              .snapshots(),
+                          builder: (context, snapshot) {
+                            if (!snapshot.hasData) {
+                              return const Text(
+                                'Loading scanned MCs...',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: dividerColor,
+                                ),
                               );
-                            },
-                          ),
+                            }
+                            final totalScanned = snapshot.data!.docs.length;
+                            return Text(
+                              'Total MCs Scanned: $totalScanned',
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: iconColor,
+                              ),
+                            );
+                          },
                         ),
-                      ],
+                  const SizedBox(height: 20),
+                  Divider(color: dividerColor),
+                  const SizedBox(height: 20),
+                  Center(
+                    child: Text(
+                      'Activity Timeline',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 18,
+                        color: textColor,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Expanded(
+                    child: StreamBuilder<QuerySnapshot>(
+                      stream: FirebaseFirestore.instance
+                          .collection('loginHistory')
+                          .where('userId', isEqualTo: userId)
+                          .orderBy('timestamp', descending: true)
+                          .snapshots(),
+                      builder: (context, snapshot) {
+                        if (snapshot.connectionState == ConnectionState.waiting) {
+                          return const Center(child: CircularProgressIndicator());
+                        }
+
+                        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                          return const Text(
+                            'No login history found.',
+                            style: TextStyle(color: dividerColor),
+                          );
+                        }
+
+                        final loginHistoryDocs = snapshot.data!.docs;
+
+                        return ListView.builder(
+                          shrinkWrap: true,
+                          itemCount: loginHistoryDocs.length,
+                          itemBuilder: (context, index) {
+                            final loginData = loginHistoryDocs[index].data() as Map<String, dynamic>;
+                            final timestamp = loginData['timestamp'] as Timestamp?;
+                            final formattedDate = timestamp != null
+                                ? DateFormat('dd MMM yyyy, hh:mm a').format(timestamp.toDate())
+                                : 'Unknown';
+
+                            return ListTile(
+                              title: const Text(
+                                'Login Activity',
+                                style: TextStyle(color: textColor),
+                              ),
+                              subtitle: Text(
+                                formattedDate,
+                                style: const TextStyle(color: dividerColor),
+                              ),
+                            );
+                          },
+                        );
+                      },
                     ),
                   ),
                 ],
@@ -454,4 +471,3 @@ class _EditProfilePageState extends State<EditProfilePage> {
     );
   }
 }
-

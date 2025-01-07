@@ -23,7 +23,7 @@ class _ReportPageState extends State<ReportPage> {
   void initState() {
     super.initState();
     if (widget.reportId != null) {
-      _loadReportData(); // Load data if editing an existing report
+      _loadReportData();
     }
   }
 
@@ -79,10 +79,8 @@ class _ReportPageState extends State<ReportPage> {
 
     try {
       if (widget.reportId == null) {
-        // Create a new report
         await FirebaseFirestore.instance.collection('reports').add(reportData);
       } else {
-        // Update an existing report
         await FirebaseFirestore.instance
             .collection('reports')
             .doc(widget.reportId)
@@ -109,81 +107,115 @@ class _ReportPageState extends State<ReportPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(widget.reportId == null ? 'Create Report' : 'Edit Report'),
-        backgroundColor: const Color(0xFF2B2129),
+        backgroundColor: const Color(0xFF5E4C92), // Matching Lecturer Dashboard
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Form(
-          key: _formKey,
-          child: ListView(
-            children: [
-              TextFormField(
-                controller: _subjectController,
-                decoration: const InputDecoration(
-                  labelText: 'Subject',
-                  border: OutlineInputBorder(),
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter a subject.';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _detailsController,
-                decoration: const InputDecoration(
-                  labelText: 'Details',
-                  border: OutlineInputBorder(),
-                ),
-                maxLines: 5,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter details.';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _studentNameController,
-                decoration: const InputDecoration(
-                  labelText: 'Student Name',
-                  border: OutlineInputBorder(),
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter the student\'s name.';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _studentMatricController,
-                decoration: const InputDecoration(
-                  labelText: 'Student Matric Number',
-                  border: OutlineInputBorder(),
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'Please enter the student\'s matric number.';
-                  }
-                  return null;
-                },
-              ),
-              const SizedBox(height: 24),
-              _isLoading
-                  ? const Center(child: CircularProgressIndicator())
-                  : ElevatedButton(
-                      onPressed: _saveReport,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF2B2129),
-                      ),
-                      child: const Text('Save Report'),
+      body: Container(
+        color: const Color(0xFFF9F9F9), // Light background
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Form(
+            key: _formKey,
+            child: ListView(
+              children: [
+                TextFormField(
+                  controller: _subjectController,
+                  decoration: InputDecoration(
+                    labelText: 'Subject',
+                    filled: true,
+                    fillColor: Colors.white,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
                     ),
-            ],
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter a subject.';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _detailsController,
+                  decoration: InputDecoration(
+                    labelText: 'Details',
+                    filled: true,
+                    fillColor: Colors.white,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  maxLines: 5,
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter details.';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _studentNameController,
+                  decoration: InputDecoration(
+                    labelText: 'Student Name',
+                    filled: true,
+                    fillColor: Colors.white,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter the student\'s name.';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: _studentMatricController,
+                  decoration: InputDecoration(
+                    labelText: 'Student Matric Number',
+                    filled: true,
+                    fillColor: Colors.white,
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  validator: (value) {
+                    if (value == null || value.isEmpty) {
+                      return 'Please enter the student\'s matric number.';
+                    }
+                    return null;
+                  },
+                ),
+                const SizedBox(height: 24),
+                _isLoading
+                    ? const Center(child: CircularProgressIndicator())
+                    : Container(
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFF5E4C92), Color(0xFF362D59)], // Match dashboard
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: ElevatedButton(
+                          onPressed: _saveReport,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.transparent,
+                            shadowColor: Colors.transparent,
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                          ),
+                          child: const Text(
+                            'Save Report',
+                            style: TextStyle(fontSize: 16, color: Colors.white),
+                          ),
+                        ),
+                      ),
+              ],
+            ),
           ),
         ),
       ),

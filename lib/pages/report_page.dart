@@ -14,6 +14,8 @@ class _ReportPageState extends State<ReportPage> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController _subjectController = TextEditingController();
   final TextEditingController _detailsController = TextEditingController();
+  final TextEditingController _studentNameController = TextEditingController();
+  final TextEditingController _studentMatricController = TextEditingController();
 
   bool _isLoading = false;
 
@@ -37,6 +39,8 @@ class _ReportPageState extends State<ReportPage> {
         if (data != null) {
           _subjectController.text = data['subject'] ?? '';
           _detailsController.text = data['details'] ?? '';
+          _studentNameController.text = data['studentName'] ?? '';
+          _studentMatricController.text = data['studentMatric'] ?? '';
         }
       }
     } catch (e) {
@@ -58,22 +62,27 @@ class _ReportPageState extends State<ReportPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('User not authenticated.')),
       );
+      setState(() {
+        _isLoading = false;
+      });
       return;
     }
 
     final reportData = {
       'subject': _subjectController.text.trim(),
       'details': _detailsController.text.trim(),
+      'studentName': _studentNameController.text.trim(),
+      'studentMatric': _studentMatricController.text.trim(),
       'timestamp': FieldValue.serverTimestamp(),
       'reviewed': false, // New reports are unreviewed by default
     };
 
     try {
       if (widget.reportId == null) {
-        // Create new report
+        // Create a new report
         await FirebaseFirestore.instance.collection('reports').add(reportData);
       } else {
-        // Update existing report
+        // Update an existing report
         await FirebaseFirestore.instance
             .collection('reports')
             .doc(widget.reportId)
@@ -106,7 +115,7 @@ class _ReportPageState extends State<ReportPage> {
         padding: const EdgeInsets.all(16.0),
         child: Form(
           key: _formKey,
-          child: Column(
+          child: ListView(
             children: [
               TextFormField(
                 controller: _subjectController,
@@ -136,9 +145,37 @@ class _ReportPageState extends State<ReportPage> {
                   return null;
                 },
               ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _studentNameController,
+                decoration: const InputDecoration(
+                  labelText: 'Student Name',
+                  border: OutlineInputBorder(),
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter the student\'s name.';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              TextFormField(
+                controller: _studentMatricController,
+                decoration: const InputDecoration(
+                  labelText: 'Student Matric Number',
+                  border: OutlineInputBorder(),
+                ),
+                validator: (value) {
+                  if (value == null || value.isEmpty) {
+                    return 'Please enter the student\'s matric number.';
+                  }
+                  return null;
+                },
+              ),
               const SizedBox(height: 24),
               _isLoading
-                  ? const CircularProgressIndicator()
+                  ? const Center(child: CircularProgressIndicator())
                   : ElevatedButton(
                       onPressed: _saveReport,
                       style: ElevatedButton.styleFrom(

@@ -2,125 +2,138 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 class SettingsPage extends StatelessWidget {
-  final String role; // Add role parameter for theme differentiation
-
-  const SettingsPage({Key? key, required this.role}) : super(key: key);
+  const SettingsPage({Key? key}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
-    final Color backgroundColor =
-        role == 'ClinicStaff' ? const Color(0xFF680C5D) : const Color(0xFF2B2129);
-    final Color gradientStart =
-        role == 'ClinicStaff' ? const Color(0xFFF78FB3) : const Color(0xFFDD8E58);
-    final Color gradientEnd =
-        role == 'ClinicStaff' ? const Color(0xFF680C5D) : const Color(0xFF2B2129);
-    final Color iconColor =
-        role == 'ClinicStaff' ? const Color(0xFFFED4E0) : const Color(0xFFE5D1B8);
+    // Updated clinic dashboard color palette
+    const Color backgroundColor = Color(0xFFF9F9F9); // Light background
+    const Color textColor = Color(0xFF22215B); // Dark text
+    const Color dividerColor = Color(0xFF9DA3B4); // Medium gray dividers
+    const Color iconColor = Color(0xFF6A1E55); // Deep purple for icons
+    const Color buttonGradientStart = Color(0xFF6A1E55); // Start of gradient
+    const Color buttonGradientEnd = Color(0xFF3B1C32); // End of gradient
 
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: backgroundColor,
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [buttonGradientStart, buttonGradientEnd],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+            ),
+          ),
+        ),
         title: const Text(
           'Settings',
           style: TextStyle(
             fontWeight: FontWeight.bold,
             fontSize: 24,
-            color: Color(0xFFE5D1B8),
+            color: Colors.white,
           ),
         ),
         leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: iconColor),
+          icon: const Icon(Icons.arrow_back, color: Colors.white),
           onPressed: () {
             Navigator.pop(context); // Navigate back to the previous page
           },
         ),
       ),
       body: Container(
-        padding: const EdgeInsets.all(16.0),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [gradientStart, gradientEnd],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Account Settings',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 18,
-                color: Color(0xFFE5D1B8),
+        color: backgroundColor,
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Account Settings',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                  color: textColor,
+                ),
               ),
-            ),
-            const SizedBox(height: 20),
-            _buildSettingItem(
-              icon: Icons.lock,
-              label: 'Change Password',
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => const ChangePasswordPage()),
-                );
-              },
-              iconColor: iconColor,
-            ),
-            const Divider(color: Color(0xFFE5D1B8), thickness: 1.0),
-            const Text(
-              'App Settings',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 18,
-                color: Color(0xFFE5D1B8),
-              ),
-            ),
-            const SizedBox(height: 20),
-            _buildSettingItem(
-              icon: Icons.notifications,
-              label: 'Notifications',
-              onTap: () {
-                // Navigate to Notifications Page
-              },
-              iconColor: iconColor,
-            ),
-            _buildSettingItem(
-              icon: Icons.language,
-              label: 'Language',
-              onTap: () {
-                // Navigate to Language Selection Page
-              },
-              iconColor: iconColor,
-            ),
-            const Spacer(),
-            Center(
-              child: ElevatedButton(
-                onPressed: () async {
-                  try {
-                    await FirebaseAuth.instance.signOut();
-                    Navigator.pushNamedAndRemoveUntil(
-                        context, '/loginRegister', (route) => false);
-                  } catch (e) {
-                    print('Error logging out: $e');
-                  }
+              const SizedBox(height: 20),
+              _buildSettingItem(
+                icon: Icons.lock,
+                label: 'Change Password',
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const ChangePasswordPage()),
+                  );
                 },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: backgroundColor,
-                  shape: RoundedRectangleBorder(
+                iconColor: iconColor,
+              ),
+              Divider(color: dividerColor, thickness: 1.0),
+              const Text(
+                'App Settings',
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                  color: textColor,
+                ),
+              ),
+              const SizedBox(height: 20),
+              _buildSettingItem(
+                icon: Icons.notifications,
+                label: 'Notifications',
+                onTap: () {
+                  // Navigate to Notifications Page
+                },
+                iconColor: iconColor,
+              ),
+              _buildSettingItem(
+                icon: Icons.language,
+                label: 'Language',
+                onTap: () {
+                  // Navigate to Language Selection Page
+                },
+                iconColor: iconColor,
+              ),
+              const Spacer(),
+              Center(
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [buttonGradientStart, buttonGradientEnd],
+                      begin: Alignment.centerLeft,
+                      end: Alignment.centerRight,
+                    ),
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  padding: const EdgeInsets.symmetric(
-                      vertical: 15, horizontal: 30),
-                ),
-                child: Text(
-                  'Logout',
-                  style: TextStyle(color: iconColor, fontSize: 18),
+                  child: ElevatedButton(
+                    onPressed: () async {
+                      try {
+                        await FirebaseAuth.instance.signOut();
+                        Navigator.pushNamedAndRemoveUntil(
+                            context, '/loginRegister', (route) => false);
+                      } catch (e) {
+                        print('Error logging out: $e');
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.transparent,
+                      shadowColor: Colors.transparent,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 30),
+                    ),
+                    child: const Text(
+                      'Logout',
+                      style: TextStyle(color: Colors.white, fontSize: 18),
+                    ),
+                  ),
                 ),
               ),
-            ),
-            const SizedBox(height: 20),
-          ],
+              const SizedBox(height: 20),
+            ],
+          ),
         ),
       ),
     );
@@ -193,22 +206,23 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
 
   @override
   Widget build(BuildContext context) {
+    const Color backgroundColor = Color(0xFFF9F9F9);
+    const Color textColor = Color(0xFF22215B);
+    const Color accentGradientStart = Color(0xFF6A1E55);
+    const Color accentGradientEnd = Color(0xFF3B1C32);
+
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: const Color(0xFF680C5D),
-        title: const Text('Change Password'),
+        backgroundColor: backgroundColor,
+        elevation: 0,
+        title: const Text(
+          'Change Password',
+          style: TextStyle(color: textColor),
+        ),
+        iconTheme: const IconThemeData(color: textColor),
       ),
       body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              Color(0xFF680C5D),
-              Color(0xFF2B2129),
-            ],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-          ),
-        ),
+        color: backgroundColor,
         child: Padding(
           padding: const EdgeInsets.all(16.0),
           child: Form(
@@ -220,16 +234,9 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                   obscureText: true,
                   decoration: const InputDecoration(
                     labelText: 'Current Password',
-                    labelStyle: TextStyle(color: Colors.white),
+                    labelStyle: TextStyle(color: textColor),
                     border: OutlineInputBorder(),
                   ),
-                  style: const TextStyle(color: Colors.white),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter your current password';
-                    }
-                    return null;
-                  },
                 ),
                 const SizedBox(height: 20),
                 TextFormField(
@@ -237,23 +244,9 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                   obscureText: true,
                   decoration: const InputDecoration(
                     labelText: 'New Password',
-                    labelStyle: TextStyle(color: Colors.white),
+                    labelStyle: TextStyle(color: textColor),
                     border: OutlineInputBorder(),
                   ),
-                  style: const TextStyle(color: Colors.white),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Please enter a new password';
-                    }
-                    if (!RegExp(r'^(?=.*[A-Z])(?=.*\d)(?=.*[!@#\$&*~]).{8,}$').hasMatch(value)) {
-                      return 'Password must include:\n'
-                          '- At least 8 characters\n'
-                          '- At least one uppercase letter\n'
-                          '- At least one number\n'
-                          '- At least one special character (!@#\$&*~)';
-                    }
-                    return null;
-                  },
                 ),
                 const SizedBox(height: 20),
                 TextFormField(
@@ -261,25 +254,32 @@ class _ChangePasswordPageState extends State<ChangePasswordPage> {
                   obscureText: true,
                   decoration: const InputDecoration(
                     labelText: 'Confirm Password',
-                    labelStyle: TextStyle(color: Colors.white),
+                    labelStyle: TextStyle(color: textColor),
                     border: OutlineInputBorder(),
                   ),
-                  style: const TextStyle(color: Colors.white),
-                  validator: (value) {
-                    if (value != _newPasswordController.text.trim()) {
-                      return 'Passwords do not match';
-                    }
-                    return null;
-                  },
                 ),
                 const SizedBox(height: 30),
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.orange,
-                    padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 50),
+                Container(
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [accentGradientStart, accentGradientEnd],
+                      begin: Alignment.centerLeft,
+                      end: Alignment.centerRight,
+                    ),
+                    borderRadius: BorderRadius.circular(10),
                   ),
-                  onPressed: _changePassword,
-                  child: const Text('Change Password'),
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.transparent,
+                      shadowColor: Colors.transparent,
+                      padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 50),
+                    ),
+                    onPressed: _changePassword,
+                    child: const Text(
+                      'Change Password',
+                      style: TextStyle(color: Colors.white),
+                    ),
+                  ),
                 ),
               ],
             ),

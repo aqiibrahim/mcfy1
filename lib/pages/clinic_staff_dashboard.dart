@@ -400,7 +400,7 @@ class _ClinicStaffDashboardState extends State<ClinicStaffDashboard> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => const SettingsPage(role: 'ClinicStaff'),
+                      builder: (context) => const SettingsPage(),
                     ),
                   );
                 },

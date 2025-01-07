@@ -360,7 +360,7 @@ class _LecturerDashboardState extends State<LecturerDashboard> {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => const SettingsPage(role: 'Lecturer'),
+                      builder: (context) => const SettingsPage(),
                     ),
                   );
                 },

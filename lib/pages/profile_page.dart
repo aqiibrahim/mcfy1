@@ -211,7 +211,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   ),
                   const SizedBox(height: 10),
                   _buildProfileItem(
-                    title: 'ID Number',
+                    title: 'Staff ID',
                     value: idNumber,
                     icon: Icons.badge,
                     iconColor: iconColor,
@@ -449,7 +449,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
               TextFormField(
                 controller: _idNumberController,
                 decoration: const InputDecoration(
-                  labelText: 'ID Number',
+                  labelText: 'Staff ID',
                   border: OutlineInputBorder(),
                 ),
                 validator: (value) {

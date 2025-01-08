@@ -41,7 +41,7 @@ class _ReportListViewState extends State<ReportListView> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Reports'),
-        backgroundColor: const Color(0xFF2B2129),
+        backgroundColor: const Color(0xFF6A1E55),
       ),
       body: StreamBuilder<QuerySnapshot>(
         stream: _firestore
@@ -104,13 +104,36 @@ class _ReportListViewState extends State<ReportListView> {
                         : const Color(0xFFDD8E58), // Orange for unreviewed
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: Text(
-                    displayText,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      color: Color(0xFFE5D1B8),
-                      fontWeight: FontWeight.bold,
-                    ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        displayText,
+                        style: const TextStyle(
+                          fontSize: 16,
+                          color: Color(0xFFE5D1B8),
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 5),
+                      Text(
+                        'Details: ${report['details'] ?? 'No details provided.'}',
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: Colors.white70,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 5),
+                      Text(
+                        'Timestamp: ${(report['timestamp'] as Timestamp?)?.toDate().toLocal().toString() ?? 'Unknown Date'}',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: Colors.white54,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               );

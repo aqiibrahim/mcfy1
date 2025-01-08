@@ -74,7 +74,8 @@ class _ReportPageState extends State<ReportPage> {
       'studentName': _studentNameController.text.trim(),
       'studentMatric': _studentMatricController.text.trim(),
       'timestamp': FieldValue.serverTimestamp(),
-      'reviewed': false, // New reports are unreviewed by default
+      'reviewed': false,
+      'createdBy': userId, // Add the user's UID
     };
 
     try {
@@ -119,6 +120,7 @@ class _ReportPageState extends State<ReportPage> {
               children: [
                 TextFormField(
                   controller: _subjectController,
+                  style: const TextStyle(color: Colors.black), // Input text color
                   decoration: InputDecoration(
                     labelText: 'Subject',
                     filled: true,
@@ -137,6 +139,7 @@ class _ReportPageState extends State<ReportPage> {
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: _detailsController,
+                  style: const TextStyle(color: Colors.black), // Input text color
                   decoration: InputDecoration(
                     labelText: 'Details',
                     filled: true,
@@ -156,6 +159,7 @@ class _ReportPageState extends State<ReportPage> {
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: _studentNameController,
+                  style: const TextStyle(color: Colors.black), // Input text color
                   decoration: InputDecoration(
                     labelText: 'Student Name',
                     filled: true,
@@ -174,6 +178,7 @@ class _ReportPageState extends State<ReportPage> {
                 const SizedBox(height: 16),
                 TextFormField(
                   controller: _studentMatricController,
+                  style: const TextStyle(color: Colors.black), // Input text color
                   decoration: InputDecoration(
                     labelText: 'Student Matric Number',
                     filled: true,
@@ -195,7 +200,7 @@ class _ReportPageState extends State<ReportPage> {
                     : Container(
                         decoration: BoxDecoration(
                           gradient: const LinearGradient(
-                            colors: [Color(0xFF5E4C92), Color(0xFF362D59)], // Match dashboard
+                            colors: [Color(0xFF5E4C92), Color(0xFF362D59)],
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
                           ),

@@ -70,31 +70,6 @@ class SettingsPage extends StatelessWidget {
                 iconColor: iconColor,
               ),
               Divider(color: dividerColor, thickness: 1.0),
-              const Text(
-                'App Settings',
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 18,
-                  color: textColor,
-                ),
-              ),
-              const SizedBox(height: 20),
-              _buildSettingItem(
-                icon: Icons.notifications,
-                label: 'Notifications',
-                onTap: () {
-                  // Navigate to Notifications Page
-                },
-                iconColor: iconColor,
-              ),
-              _buildSettingItem(
-                icon: Icons.language,
-                label: 'Language',
-                onTap: () {
-                  // Navigate to Language Selection Page
-                },
-                iconColor: iconColor,
-              ),
               const Spacer(),
               Center(
                 child: Container(
